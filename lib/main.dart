@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -28,6 +29,7 @@ import 'services/database.dart';
 import 'services/storage.dart';
 import 'settings/collect_events_setting.dart';
 import 'settings/settings_provider.dart';
+import 'ui/desktop/desktop_window_config.dart';
 
 void main() async {
   // Not all errors are caught by Flutter. Sometimes, errors are instead caught by Zones.
@@ -36,6 +38,11 @@ void main() async {
       // https://stackoverflow.com/questions/57689492/flutter-unhandled-exception-servicesbinding-defaultbinarymessenger-was-accesse
       final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
       FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+      // Initialize desktop window configuration
+      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        await DesktopWindowConfig.initialize();
+      }
 
       await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
       Log.out('start with firebase: ${DefaultFirebaseOptions.currentPlatform.appId}', 'init');
