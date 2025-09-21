@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام نقاط البيع - متجر الملابس</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans Arabic', sans-serif;
+            background: linear-gradient(135deg, #B0CDFF, #D8E5FB, #C3F9FE);
+            min-height: 100vh;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #448AFF;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .tab {
+            background: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tab:hover, .tab.active {
+            background: #448AFF;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            min-height: 500px;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .feature-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            border-right: 4px solid #448AFF;
+        }
+        
+        .feature-card h3 {
+            color: #448AFF;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .feature-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .cashier-demo {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .cash-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .cash-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            color: #2e7d32;
+        }
+        
+        .status {
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+        
+        .emoji {
+            font-size: 1.5em;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 نظام نقاط البيع للملابس والإكسسوارات</h1>
+            <p>نظام متكامل باللغة العربية مع دعم مسح الباركود والطباعة</p>
+            <div class="status">✅ جاهز للتشغيل</div>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('dashboard')">🏠 الرئيسية</div>
+            <div class="tab" onclick="showTab('cashier')">💰 الصندوق</div>
+            <div class="tab" onclick="showTab('products')">👕 المنتجات</div>
+            <div class="tab" onclick="showTab('inventory')">📦 المخزون</div>
+            <div class="tab" onclick="showTab('analytics')">📊 الإحصائيات</div>
+        </div>
+        
+        <div class="content">
+            <div id="dashboard" class="tab-content">
+                <h2>🎯 لوحة التحكم الرئيسية</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🇸🇦 واجهة عربية كاملة</h3>
+                        <p>تخطيط من اليمين إلى اليسار مع خطوط عربية احترافية وعملة الريال السعودي</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📱 مسح الباركود</h3>
+                        <p>مسح ضوئي بالكاميرا أو الماسح الخارجي مع البحث الفوري عن المنتجات</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>👕 إدارة الملابس</h3>
+                        <p>أنواع المنتجات بالمقاسات والألوان مع تتبع المخزون لكل متغير</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🖨️ طباعة الفواتير</h3>
+                        <p>طباعة فواتير عربية احترافية مع تفاصيل المنتجات والمبالغ</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="cashier" class="tab-content" style="display:none;">
+                <h2>💰 إدارة الصندوق</h2>
+                <div class="cashier-demo">
+                    <h3>💵 فئات الريال السعودي</h3>
+                    <div class="cash-grid">
+                        <div class="cash-item">500 ر.س</div>
+                        <div class="cash-item">100 ر.س</div>
+                        <div class="cash-item">50 ر.س</div>
+                        <div class="cash-item">20 ر.س</div>
+                        <div class="cash-item">10 ر.س</div>
+                        <div class="cash-item">5 ر.س</div>
+                        <div class="cash-item">1 ر.س</div>
+                        <div class="cash-item">0.50 ر.س</div>
+                    </div>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>💳 معالجة المدفوعات</h3>
+                        <p>حساب الباقي تلقائياً مع إدارة ذكية للفئات النقدية المتاحة</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 الفائض اليومي</h3>
+                        <p>تسوية نهاية اليوم مع حساب الفرق بين النقد الفعلي والمتوقع</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="products" class="tab-content" style="display:none;">
+                <h2>👕 إدارة المنتجات</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>👔 فئات الملابس</h3>
+                        <p>قمصان، بناطيل، فساتين، أحذية، إكسسوارات مع تصنيف متقدم</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎨 المقاسات والألوان</h3>
+                        <p>إدارة شاملة للمتغيرات: صغير، متوسط، كبير بجميع الألوان</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🏷️ الباركود</h3>
+                        <p>إنشاء ومسح أكواد الباركود لجميع المنتجات والمتغيرات</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📋 المجموعات الموسمية</h3>
+                        <p>تنظيم المنتجات حسب الموسم: ربيع، صيف، خريف، شتاء</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="inventory" class="tab-content" style="display:none;">
+                <h2>📦 إدارة المخزون</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>📊 تتبع المخزون</h3>
+                        <p>متابعة دقيقة لكميات المنتجات حسب المقاس واللون</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚠️ تنبيهات النفاد</h3>
+                        <p>تحذيرات تلقائية عند انخفاض مستوى المخزون</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="analytics" class="tab-content" style="display:none;">
+                <h2>📊 الإحصائيات والتقارير</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>💹 المبيعات اليومية</h3>
+                        <p>تقارير شاملة عن الإيرادات والأرباح والتكاليف</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📈 تحليل الأداء</h3>
+                        <p>رسوم بيانية تفاعلية لتتبع الأداء عبر الوقت</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 10px;">
+            <h3>🚀 التطبيق جاهز للتشغيل!</h3>
+            <p>بمجرد تثبيت Xcode، ستتمكن من تشغيل التطبيق الكامل على macOS</p>
+            <p style="margin-top: 10px; color: #666;">
+                <strong>الأوامر:</strong> <code>flutter run -d macos</code>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.style.display = 'none');
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName).style.display = 'block';
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -64,13 +64,7 @@ dependencies:
   visibility_detector: ^0.4.0+2  # 23, 03-09
   cupertino_icons: ^1.0.8  # This is for google-package which use it in some case
   
-  # desktop support
-  window_manager: ^0.3.7  # Desktop window management
   
-  # barcode scanning
-  mobile_scanner: ^5.0.0  # Camera-based barcode scanning
-  qr_flutter: ^4.1.0     # QR code generation
-  barcode_widget: ^2.0.3  # Barcode generation and display
   excel:
     git:
       url: https://github.com/evan361425/excel

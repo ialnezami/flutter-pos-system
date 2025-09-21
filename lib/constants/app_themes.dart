@@ -6,8 +6,6 @@ class AppThemes {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorSchemeSeed: const Color(0xFF448AFF),
-    // Arabic font support
-    fontFamily: 'NotoSansArabic',
     textTheme: const TextTheme().apply(
       fontFamily: 'NotoSansArabic',
     ),
@@ -19,8 +17,6 @@ class AppThemes {
     ]);
 
   static final ThemeData darkTheme = ThemeData.dark(useMaterial3: true).copyWith(
-    // Arabic font support for dark theme
-    fontFamily: 'NotoSansArabic',
     textTheme: ThemeData.dark().textTheme.apply(
       fontFamily: 'NotoSansArabic',
     ),

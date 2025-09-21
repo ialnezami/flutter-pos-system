@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:packages/bluetooth.dart' as bt;
+import 'package:possystem/packages/bluetooth.dart' as bt;
 
 typedef BluetoothSignal = bt.BluetoothSignal;
 typedef PrinterStatus = bt.PrinterStatus;
