@@ -76,7 +76,7 @@ class App extends StatelessWidget {
           // Provide the generated AppLocalizations to the MaterialApp. This
           // allows descendant Widgets to display the correct translations
           // depending on the user's locale.
-          locale: LanguageSetting.instance.value?.locale,
+          locale: LanguageSetting.instance.value?.locale ?? const Locale('ar'),
           supportedLocales: AppLocalizations.supportedLocales,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
 

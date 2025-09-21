@@ -1,0 +1,366 @@
+{
+  "@@locale": "ar",
+  "@@author": "Task Master AI",
+  "appTitle": "نظام نقاط البيع",
+  "actSuccess": "تم بنجاح!",
+  "actError": "حدث خطأ",
+  "actMoreInfo": "المزيد",
+  "clothingProductTitle": "المنتجات",
+  "clothingVariantTitle": "المتغيرات",
+  "clothingSizeTitle": "المقاس",
+  "clothingColorTitle": "اللون",
+  "clothingStyleTitle": "الطراز",
+  "clothingBrandTitle": "الماركة",
+  "clothingCategoryTitle": "الفئة",
+  "clothingGenderTitle": "الجنس",
+  "clothingSeasonTitle": "الموسم",
+  "clothingCollectionTitle": "المجموعة",
+  "clothingMaterialTitle": "المادة",
+  "clothingCareTitle": "تعليمات العناية",
+  "sizeExtraSmall": "صغير جداً",
+  "sizeSmall": "صغير",
+  "sizeMedium": "متوسط",
+  "sizeLarge": "كبير",
+  "sizeExtraLarge": "كبير جداً",
+  "sizeDoubleExtraLarge": "كبير جداً جداً",
+  "sizeOneSize": "مقاس واحد",
+  "colorBlack": "أسود",
+  "colorWhite": "أبيض",
+  "colorRed": "أحمر",
+  "colorBlue": "أزرق",
+  "colorGreen": "أخضر",
+  "colorYellow": "أصفر",
+  "colorPurple": "بنفسجي",
+  "colorOrange": "برتقالي",
+  "colorPink": "وردي",
+  "colorBrown": "بني",
+  "colorGray": "رمادي",
+  "colorNavyBlue": "أزرق بحري",
+  "colorBurgundy": "عنابي",
+  "colorForestGreen": "أخضر غابات",
+  "colorOliveGreen": "أخضر زيتوني",
+  "colorTan": "بني فاتح",
+  "colorKhaki": "كاكي",
+  "categoryShirts": "قمصان",
+  "categoryPants": "بناطيل",
+  "categoryDresses": "فساتين",
+  "categoryShoes": "أحذية",
+  "categoryAccessories": "إكسسوارات",
+  "categoryOuterwear": "ملابس خارجية",
+  "categoryUnderwear": "ملابس داخلية",
+  "categorySportswear": "ملابس رياضية",
+  "categoryBags": "حقائب",
+  "categoryJewelry": "مجوهرات",
+  "genderMen": "رجال",
+  "genderWomen": "نساء",
+  "genderUnisex": "للجنسين",
+  "genderKids": "أطفال",
+  "seasonSpring": "ربيع",
+  "seasonSummer": "صيف",
+  "seasonFall": "خريف",
+  "seasonWinter": "شتاء",
+  "seasonAllSeason": "جميع المواسم",
+  "stockInStock": "متوفر",
+  "stockLowStock": "مخزون قليل",
+  "stockOutOfStock": "نفد المخزون",
+  "stockInactive": "غير نشط",
+  "stockOverstocked": "مخزون زائد",
+  "variantSelectSize": "اختر المقاس",
+  "variantSelectColor": "اختر اللون",
+  "variantSelectSizeFirst": "يرجى اختيار المقاس أولاً",
+  "variantStockLeft": "{stock} متبقي",
+  "@variantStockLeft": {
+    "placeholders": {
+      "stock": {
+        "type": "int"
+      }
+    }
+  },
+  "variantSKU": "رمز المنتج: {sku}",
+  "@variantSKU": {
+    "placeholders": {
+      "sku": {
+        "type": "String"
+      }
+    }
+  },
+  "variantBasePrice": "السعر الأساسي:",
+  "variantPrice": "سعر المتغير:",
+  "productAddToCart": "أضف للسلة",
+  "productViewDetails": "عرض التفاصيل",
+  "productSelectVariant": "اختر المتغير",
+  "productAddVariant": "إضافة متغير",
+  "productEditVariant": "تعديل المتغير",
+  "productRemoveVariant": "حذف المتغير",
+  "customerTitle": "العملاء",
+  "customerPreferences": "تفضيلات العميل",
+  "customerLoyalty": "برنامج الولاء",
+  "customerType": "نوع العميل",
+  "customerRegular": "عميل عادي",
+  "customerVIP": "عميل مميز",
+  "customerWholesale": "عميل جملة",
+  "customerStaff": "موظف",
+  "loyaltyPoints": "نقاط الولاء",
+  "loyaltyTierBronze": "برونزي",
+  "loyaltyTierSilver": "فضي",
+  "loyaltyTierGold": "ذهبي",
+  "loyaltyTierPlatinum": "بلاتيني",
+  "loyaltyRewards": "المكافآت",
+  "loyaltyPointsEarned": "نقاط مكتسبة: {points}",
+  "@loyaltyPointsEarned": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "loyaltyNextTier": "نقاط للمستوى التالي: {points}",
+  "@loyaltyNextTier": {
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "collectionTitle": "المجموعات",
+  "collectionStatus": "حالة المجموعة",
+  "collectionUpcoming": "قادمة",
+  "collectionActive": "نشطة",
+  "collectionEnding": "تنتهي قريباً",
+  "collectionEnded": "انتهت",
+  "collectionArchived": "مؤرشفة",
+  "collectionDiscount": "خصم: {discount}%",
+  "@collectionDiscount": {
+    "placeholders": {
+      "discount": {
+        "type": "num"
+      }
+    }
+  },
+  "collectionStartsIn": "تبدأ خلال {days} أيام",
+  "@collectionStartsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "collectionEndsIn": "تنتهي خلال {days} أيام",
+  "@collectionEndsIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "settingTab": "الإعدادات",
+  "settingVersion": "الإصدار: {version}",
+  "@settingVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingWelcome": "مرحباً، {name}",
+  "@settingWelcome": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingLogoutBtn": "تسجيل الخروج",
+  "settingLanguageTitle": "اللغة",
+  "settingThemeTitle": "المظهر",
+  "settingThemeName": "{name, select, dark{المظهر المظلم} light{المظهر الفاتح} system{تابع النظام} other{غير معروف}}",
+  "@settingThemeName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "stockTab": "المخزون",
+  "stockIngredientEmptyBody": "بمجرد إضافة المكونات، يمكنك البدء في تتبع مخزونها!",
+  "stockIngredientTitleCreate": "إضافة مكون",
+  "stockIngredientTitleUpdate": "تعديل مكون",
+  "stockIngredientNameLabel": "اسم المكون",
+  "stockIngredientNameHint": "مثال: الجبن",
+  "stockIngredientAmountLabel": "الكمية الحالية",
+  "menuTitle": "القائمة",
+  "menuSubtitle": "الفئات، المنتجات",
+  "menuCatalogTitleCreate": "إضافة فئة",
+  "menuCatalogNameLabel": "اسم الفئة",
+  "menuCatalogNameHint": "مثال: البرغر",
+  "menuProductTitleCreate": "إضافة منتج",
+  "menuProductNameLabel": "اسم المنتج",
+  "menuProductNameHint": "مثال: برغر الجبن",
+  "menuProductPriceLabel": "سعر المنتج",
+  "menuProductCostLabel": "تكلفة المنتج",
+  "cashierTab": "الصندوق",
+  "orderTitle": "الطلبات",
+  "orderBtn": "طلب",
+  "orderActionCheckout": "الدفع",
+  "orderActionStash": "حفظ",
+  "orderCartActionDiscount": "خصم",
+  "orderCartActionDelete": "حذف",
+  "analysisTab": "الإحصائيات",
+  "analysisHistoryBtn": "السجلات",
+  "analysisHistoryTitle": "سجل الطلبات",
+  "printerTitle": "إدارة الطابعة",
+  "printerBtnConnect": "اتصال",
+  "printerBtnDisconnect": "قطع الاتصال",
+  "printerBtnTestPrint": "طباعة تجريبية",
+  "printerStatusSuccess": "الطابعة متصلة",
+  "printerStatusConnecting": "جاري الاتصال",
+  "printerStatusStandby": "غير متصلة",
+  "transitTitle": "نقل البيانات",
+  "transitDescription": "استيراد وتصدير معلومات المتجر والطلبات",
+  "orderAttributeTitle": "إعدادات العميل",
+  "orderAttributeDescription": "معلومات للتحليل مثل تناول في المكان، طلب خارجي، إلخ",
+  "btnSave": "حفظ",
+  "btnCancel": "إلغاء",
+  "btnDelete": "حذف",
+  "btnEdit": "تعديل",
+  "btnAdd": "إضافة",
+  "btnUpdate": "تحديث",
+  "btnCreate": "إنشاء",
+  "btnConfirm": "تأكيد",
+  "btnClose": "إغلاق",
+  "btnNext": "التالي",
+  "btnPrevious": "السابق",
+  "btnFinish": "إنهاء",
+  "btnContinue": "متابعة",
+  "btnRetry": "إعادة المحاولة",
+  "loading": "جاري التحميل...",
+  "saving": "جاري الحفظ...",
+  "updating": "جاري التحديث...",
+  "deleting": "جاري الحذف...",
+  "processing": "جاري المعالجة...",
+  "emptyBodyTitle": "عذراً! لا يوجد شيء هنا.",
+  "emptyBodyAction": "إعداد",
+  "noDataAvailable": "لا توجد بيانات متاحة",
+  "noProductsFound": "لم يتم العثور على منتجات",
+  "noCustomersFound": "لم يتم العثور على عملاء",
+  "noOrdersFound": "لم يتم العثور على طلبات",
+  "invalidStringEmpty": "{field} لا يمكن أن يكون فارغاً.",
+  "@invalidStringEmpty": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidNumberType": "{field} يجب أن يكون رقماً.",
+  "@invalidNumberType": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidNumberPositive": "{field} لا يمكن أن يكون سالباً.",
+  "@invalidNumberPositive": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidNumberMaximum": "{field} لا يمكن أن يتجاوز {maximum}.",
+  "@invalidNumberMaximum": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "maximum": {
+        "type": "num"
+      }
+    }
+  },
+  "invalidNumberMinimum": "{field} لا يمكن أن يكون أقل من {minimum}.",
+  "@invalidNumberMinimum": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      },
+      "minimum": {
+        "type": "num"
+      }
+    }
+  },
+  "today": "اليوم",
+  "yesterday": "أمس",
+  "thisWeek": "هذا الأسبوع",
+  "lastWeek": "الأسبوع الماضي",
+  "thisMonth": "هذا الشهر",
+  "lastMonth": "الشهر الماضي",
+  "thisYear": "هذا العام",
+  "lastYear": "العام الماضي",
+  "totalCount": "{count, plural, =0{لا توجد عناصر} =1{عنصر واحد} other{{count} عنصر}}",
+  "@totalCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchCount": "تم العثور على {count} نتيجة",
+  "@searchCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "currency": "ر.س",
+  "currencySymbol": "ر.س",
+  "title": "{name, select, analysis{الإحصائيات} stock{المخزون} cashier{الصندوق} settings{الإعدادات} menu{القائمة} printers{الطابعة} transit{نقل البيانات} orderAttributes{إعدادات العميل} stockQuantities{الكميات} elf{الاقتراحات} more{المزيد} debug{التصحيح} other{غير معروف}}",
+  "@title": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dialogDeletionTitle": "تأكيد الحذف",
+  "dialogDeletionContent": "هل أنت متأكد من حذف \"{name}\"؟\n\n{more}لا يمكن التراجع عن هذا الإجراء!\n",
+  "@dialogDeletionContent": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "more": {
+        "type": "String"
+      }
+    }
+  },
+  "singleChoice": "اختر واحداً",
+  "multiChoices": "اختر متعدد",
+  "searchHint": "البحث...",
+  "searchResults": "نتائج البحث",
+  "searchNoResults": "لا توجد نتائج",
+  "searchFilterBy": "تصفية حسب",
+  "searchSortBy": "ترتيب حسب",
+  "filterAll": "الكل",
+  "filterAvailable": "متاح",
+  "filterOutOfStock": "نفد المخزون",
+  "filterOnSale": "في التخفيضات",
+  "filterNewArrivals": "وصل حديثاً",
+  "sortName": "الاسم",
+  "sortPrice": "السعر",
+  "sortNewest": "الأحدث",
+  "sortPopular": "الأكثر شعبية",
+  "sortAscending": "تصاعدي",
+  "sortDescending": "تنازلي",
+  "navHome": "الرئيسية",
+  "navProducts": "المنتجات",
+  "navCategories": "الفئات",
+  "navCustomers": "العملاء",
+  "navReports": "التقارير",
+  "navSettings": "الإعدادات",
+  "navInventory": "المخزون",
+  "navSales": "المبيعات",
+  "navCollections": "المجموعات"
+}

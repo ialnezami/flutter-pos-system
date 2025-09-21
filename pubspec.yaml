@@ -31,10 +31,6 @@ dependencies:
   sembast: ^3.8.5  # 25, 05-23
   shared_preferences: ^2.5.3
   http: ^1.5.0
-  packages:
-    git:
-      url: https://github.com/evan361425/flutter-pos-packages
-      ref: 2025.09.14-01
 
   # google services
   googleapis: ^14.0.0
@@ -103,6 +99,14 @@ flutter:
   - assets/feature_request_please.gif
   - assets/google_signin_button.svg
   - assets/excel_icon.svg
+
+  # Arabic font support
+  fonts:
+    - family: NotoSansArabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-Regular.ttf
+        - asset: assets/fonts/NotoSansArabic-Bold.ttf
+          weight: 700
 
 # flutter pub run flutter_native_splash:create
 flutter_native_splash:

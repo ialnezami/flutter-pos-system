@@ -1,0 +1,349 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Project Setup & Core Dependencies",
+        "description": "Cloned the existing Flutter POS system repository (`evan361425/flutter-pos-system`), analyzed its architecture and dependencies, and documented its capabilities. Verified the development environment and confirmed the project's readiness for further development.",
+        "status": "completed",
+        "dependencies": [],
+        "priority": "high",
+        "details": "Cloned `evan361425/flutter-pos-system` which provides a mature, production-ready POS foundation. Analyzed existing dependencies, noting the use of Provider, GoRouter, and Firebase instead of Riverpod. Confirmed the project utilizes SQLite for offline-first architecture, diverging from the initial plan to use Drift. Verified a clean architecture with proper separation of concerns is already implemented. Documented existing system capabilities in `FEATURE_OVERVIEW.md`. Identified missing features from PRD: barcode scanning, PIN-based authentication, and role-based access control, which will be addressed in subsequent tasks. Noted the absence of `build_runner` configuration for Drift and specific `sqlcipher_flutter_libs` integration, as Drift is not used.",
+        "testStrategy": "Successfully cloned the repository and ran `flutter pub get`. Confirmed Flutter development environment is properly set up via `flutter doctor`. Verified the existing `main.dart` runs without errors on target platforms. Reviewed `pubspec.yaml` to understand existing dependencies and their versions. Inspected project structure to confirm clean architecture implementation.",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Database Schema Implementation (Drift)",
+        "description": "Implement the core database schema using Drift, including `Products`, `Sales`, `SaleItems`, `PaymentMethods`, `Categories`, `Customers`, `Users`, `AuditLog`, and `SyncQueue` tables as defined in the RPD.",
+        "details": "Use `drift` annotations for table definitions, ensuring proper data types and constraints. Integrate `sqlcipher` for at-rest data encryption. Define foreign key relationships and indices for performance.",
+        "testStrategy": "Write unit tests for `AppDatabase` to ensure tables are created correctly and relationships are defined. Verify `sqlcipher` initialization and basic CRUD operations on a test database instance.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Authentication System (PIN-based)",
+        "description": "Implement user authentication with PIN-based login. This includes user registration (for admin), secure PIN hashing, and session management.",
+        "details": "Create `AuthRepository` and `AuthService` using Riverpod for state management. Implement secure PIN hashing (e.g., bcrypt or similar). Develop UI for login, logout, and initial admin user setup. Manage user sessions securely.",
+        "testStrategy": "Write unit tests for `AuthRepository` (login, logout, PIN hashing, session management). Develop widget tests for the login screen UI. Implement integration tests for a complete successful login and logout flow.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Role-Based Access Control (RBAC)",
+        "description": "Implement role-based access control (Admin, Manager, Cashier, Stock Manager) with granular permissions for different features and actions.",
+        "details": "Extend the `users` table with `role` and `permissions` fields (e.g., JSON array for permissions). Create a `PermissionService` to check user permissions before accessing specific features or performing sensitive actions. Integrate with UI to enable/disable features based on role.",
+        "testStrategy": "Write unit tests for `PermissionService` to verify role-permission mappings and access checks. Develop widget tests to ensure UI elements (buttons, menu items) are correctly hidden or shown based on the logged-in user's role.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Product Management - CRUD Operations",
+        "description": "Develop UI and backend logic for adding, viewing, updating, and deleting products with comprehensive attributes.",
+        "details": "Implement `ProductRepository` and `ProductService` using Riverpod. Create forms for product details (name, barcode, price, category, stock, supplier, etc.) with input validation. Develop a product list view with search and filter capabilities.",
+        "testStrategy": "Write unit tests for `ProductRepository` and `ProductService` logic. Develop widget tests for product forms and list views. Implement integration tests for end-to-end product creation, update, and deletion flows, verifying database consistency.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Barcode Scanning Integration",
+        "description": "Integrate `mobile_scanner` for camera-based barcode scanning to quickly add products to sales or search inventory.",
+        "details": "Implement a dedicated scanner widget with auto-focus and flashlight control. Handle various barcode formats (EAN-8, EAN-13, UPC-A, UPC-E, Code 128, Code 39, QR codes). Integrate scanning results with product lookup functionality.",
+        "testStrategy": "Conduct integration tests to verify camera access, barcode detection accuracy, and speed. Manual testing with a variety of physical barcodes and lighting conditions is crucial.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "POS Screen - Product Addition & Cart Management",
+        "description": "Develop the core POS screen allowing cashiers to add products via scanning or search, adjust quantities, and manage the shopping cart.",
+        "details": "Design an intuitive UI for the POS screen. Implement logic to add products to the cart, display line items, calculate subtotal, and allow quantity adjustments (including decimal precision). Support quick access buttons for frequently sold items.",
+        "testStrategy": "Develop widget tests for cart display, quantity adjustment controls, and product search results. Implement integration tests for adding products via scan/search, modifying quantities, and verifying cart calculations.",
+        "priority": "high",
+        "dependencies": [
+          5,
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "POS Screen - Payment Processing (Cash)",
+        "description": "Implement cash payment processing, including accurate change calculation and basic cash drawer integration (initially simulated).",
+        "details": "Develop UI for entering cash amount received, displaying change due. Update `sales` and `payment_methods` tables upon transaction completion. Implement logic for triggering a cash drawer (e.g., via printer command, initially simulated).",
+        "testStrategy": "Write unit tests for change calculation logic. Develop widget tests for the cash payment dialog. Implement integration tests for completing a cash sale, verifying correct database updates and change calculation.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Receipt Printing (ESC/POS)",
+        "description": "Integrate `esc_pos_printer` and `esc_pos_utils` to generate and print customizable receipts for completed sales.",
+        "details": "Support thermal printers (58mm, 80mm paper) via Bluetooth, Wi-Fi, and USB (if feasible). Implement receipt customization options for header, logo, itemized list, taxes, discounts, totals, and footer messages. Allow PDF generation as a backup.",
+        "testStrategy": "Write unit tests for receipt generation logic (content and formatting). Conduct manual testing with various thermal printer models to verify successful printing, layout accuracy, and connection stability (Bluetooth, Wi-Fi).",
+        "priority": "high",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Inventory Management - Stock Adjustments",
+        "description": "Implement functionality for various stock adjustments, including purchase receipts, returns, damage, theft, and transfers.",
+        "details": "Create UI for recording stock changes with reasons and timestamps. Update `products.current_stock` and log all movements in a dedicated `StockMovement` table or `AuditLog`. Support batch adjustments.",
+        "testStrategy": "Write unit tests for stock adjustment logic and quantity updates. Develop widget tests for adjustment forms. Implement integration tests for applying various adjustment types and verifying correct stock levels and audit trail entries.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 11,
+        "title": "Offline Data Management & Local Storage",
+        "description": "Ensure all core application data is stored locally using Drift with SQLCipher encryption, providing 100% offline functionality.",
+        "details": "Verify data persistence across app restarts and device reboots. Implement comprehensive data validation rules and constraints at the database level to maintain data integrity. Optimize database queries for performance.",
+        "testStrategy": "Conduct integration tests to verify data persistence after app restarts and device reboots. Write unit tests for data validation rules. Perform stress tests to ensure database performance with large datasets.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 12,
+        "title": "Basic Synchronization System (Delta Sync)",
+        "description": "Implement a basic delta synchronization mechanism to push local changes to a remote backend when connectivity is available.",
+        "details": "Use the `SyncQueue` table to track pending create, update, and delete operations. Implement `connectivity_plus` to detect network status changes. Utilize `dio` for efficient API calls to a mock or placeholder backend. Focus on pushing local changes first.",
+        "testStrategy": "Write unit tests for `SyncQueue` operations (add, retrieve, mark as synced). Develop integration tests to simulate network changes (offline to online) and verify that data is correctly queued and sent to a mock API.",
+        "priority": "high",
+        "dependencies": [
+          2,
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Sales Reporting - Daily/Weekly/Monthly",
+        "description": "Develop basic sales reports showing daily, weekly, and monthly revenue, transaction count, and items sold.",
+        "details": "Query `sales` and `sale_items` tables to aggregate data. Display reports in clear, concise tables and simple charts. Allow filtering by date range. Implement basic export to CSV/PDF.",
+        "testStrategy": "Write unit tests for report data aggregation logic. Develop widget tests for report display components. Implement integration tests to verify report accuracy against sample sales data for various date ranges.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Customer Management - CRUD & Purchase History",
+        "description": "Implement CRUD operations for customer profiles and display their complete purchase history.",
+        "details": "Create `CustomerRepository` and UI for customer details (name, contact info, loyalty points). Link `sales` to `customers` to display a chronological list of past transactions for each customer.",
+        "testStrategy": "Write unit tests for `CustomerRepository` operations. Develop widget tests for customer forms and the purchase history view. Implement integration tests for customer creation, update, and viewing their complete transaction history.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Product Variants & Bundle Products",
+        "description": "Extend product management to support product variants (size, color, flavor) and the creation of product bundles.",
+        "details": "Modify the `products` table or create new `product_variants` and `product_bundles` tables to handle complex product structures. Adjust stock deduction logic to correctly account for variant and bundle sales.",
+        "testStrategy": "Write unit tests for variant/bundle creation logic and accurate stock deduction. Implement integration tests for adding variants/bundles to a sale and verifying the correct impact on inventory levels.",
+        "priority": "medium",
+        "dependencies": [
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Advanced POS - Discounts & Returns",
+        "description": "Implement line item and transaction-level discounts (percentage/fixed amount), and functionality for product returns/exchanges.",
+        "details": "Update `sale_items` and `sales` tables to store discount information. Implement logic for calculating discounted totals. Develop UI and backend logic for processing partial/full returns and exchanges, including stock adjustments.",
+        "testStrategy": "Write unit tests for discount calculation and return/exchange logic. Implement integration tests for applying various discount types and processing returns/exchanges, verifying correct financial and inventory updates.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Advanced Payment Methods (Card, Digital, Mixed)",
+        "description": "Extend payment processing to include manual card entry (for external terminal integration), digital payments (QR code placeholder), and mixed payments.",
+        "details": "Update `payment_methods` table to store details for different payment types (e.g., card last four, type). Develop UI for selecting multiple payment methods and splitting payments across them. Integrate with external payment terminals (API placeholder).",
+        "testStrategy": "Write unit tests for mixed payment calculations and validation. Develop widget tests for advanced payment dialogs. Implement integration tests for processing sales with multiple payment types and verifying database records.",
+        "priority": "medium",
+        "dependencies": [
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Inventory Management - Low Stock Alerts & Reordering",
+        "description": "Implement low stock alerts based on customizable reorder levels and automated purchase order generation.",
+        "details": "Develop a background service or scheduled task to check product stock levels against reorder points. Create UI for viewing low stock alerts and generating draft purchase orders for suppliers. Implement notifications for alerts.",
+        "testStrategy": "Write unit tests for alert threshold logic and purchase order generation. Implement integration tests to simulate low stock scenarios and verify alert display and correct PO creation.",
+        "priority": "medium",
+        "dependencies": [
+          10
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Comprehensive Reporting - Inventory & Financial",
+        "description": "Develop detailed inventory reports (current stock, movement, valuation) and basic financial reports (Profit & Loss, cash flow).",
+        "details": "Query relevant tables (`products`, `stock_movements`, `sales`, `payment_methods`) to generate comprehensive reports. Implement different costing methods (FIFO, LIFO, Weighted Average) for inventory valuation. Allow flexible date range selection and export options.",
+        "testStrategy": "Write unit tests for complex report calculations (e.g., inventory valuation, P&L). Implement integration tests to verify report accuracy with various data scenarios and date ranges.",
+        "priority": "medium",
+        "dependencies": [
+          10,
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "UI/UX - Home Dashboard & Navigation",
+        "description": "Design and implement the main Home Dashboard with quick stats, quick actions, and clear navigation to major features.",
+        "details": "Create an intuitive dashboard displaying key metrics (today's sales, transaction count, low stock alerts). Implement quick action buttons (e.g., 'New Sale', 'Product Search'). Ensure consistent and easy navigation across the application using `flutter_screenutil` for responsiveness.",
+        "testStrategy": "Develop widget tests for dashboard layout and navigation elements. Implement integration tests to ensure correct data display on the dashboard and smooth navigation flows between screens.",
+        "priority": "medium",
+        "dependencies": [
+          3,
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 21,
+        "title": "UI/UX - POS Screen Enhancements",
+        "description": "Refine the POS screen with quick access buttons, voice search capability (placeholder), and improved visual/audio feedback.",
+        "details": "Enhance the POS screen with customizable quick access buttons for frequently sold items or categories. Implement a placeholder for voice search. Integrate `vibration` and `audioplayers` for haptic and audio feedback on key actions (e.g., successful scan, transaction complete).",
+        "testStrategy": "Develop widget tests for quick access buttons and visual feedback elements. Conduct user acceptance testing to evaluate the usability and efficiency of the enhanced POS screen in a simulated retail environment.",
+        "priority": "medium",
+        "dependencies": [
+          7,
+          16,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 22,
+        "title": "Conflict Resolution for Sync",
+        "description": "Implement robust conflict resolution strategies for data synchronization (e.g., last-write-wins, user-prompted for critical conflicts).",
+        "details": "Define clear rules for resolving conflicts when the same data is modified both locally and remotely. Implement smart merge strategies for different data types. Enhance `SyncQueue` to handle conflict status and provide detailed error reporting.",
+        "testStrategy": "Write unit tests for various conflict resolution algorithms. Implement integration tests to simulate concurrent modifications on the same record from different devices and verify the correct resolution based on defined strategies.",
+        "priority": "high",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Automated Local Backups & Recovery",
+        "description": "Implement automated local backups of the SQLite database with configurable frequency and a mechanism for restoring from backups.",
+        "details": "Use `path_provider` to store encrypted backup files locally. Provide options for manual backup and restoration. Ensure backup files are also encrypted for security. Implement integrity checks for backup and restore processes.",
+        "testStrategy": "Conduct integration tests to verify backup creation, encryption, and successful restoration of data to a previous state. Manual testing for disaster recovery scenarios (e.g., accidental data deletion, app reinstallation).",
+        "priority": "medium",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 24,
+        "title": "Comprehensive Testing (Unit, Widget, Integration)",
+        "description": "Write comprehensive unit, widget, and integration tests for core functionalities (authentication, product CRUD, sales flow, synchronization).",
+        "details": "Achieve target code coverage (e.g., 90%+ for business logic). Utilize `flutter_test` for unit and widget tests, and `integration_test` for end-to-end scenarios. Focus on critical paths and error handling.",
+        "testStrategy": "Monitor code coverage metrics using tools like `lcov`. Conduct end-to-end integration tests for critical user flows such as login -> product addition -> sale transaction -> receipt printing -> offline-online sync.",
+        "priority": "high",
+        "dependencies": [
+          3,
+          5,
+          8,
+          12,
+          16
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 25,
+        "title": "Deployment Preparation & Documentation",
+        "description": "Prepare the application for deployment to app stores, including app icons, splash screens, and release configurations. Finalize user and technical documentation.",
+        "details": "Configure app icons, splash screens, and necessary platform-specific settings for Google Play Store and Apple App Store. Write comprehensive `README.md`, user guides, and API documentation. Set up CI/CD pipelines for automated builds and testing.",
+        "testStrategy": "Verify app store submission requirements are met (e.g., privacy policy, screenshots). Review all documentation for clarity, accuracy, and completeness. Conduct final user acceptance testing with beta users.",
+        "priority": "low",
+        "dependencies": [
+          20,
+          21,
+          24
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-09-20T03:28:34.010Z",
+      "updated": "2025-09-21T06:54:17.331Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

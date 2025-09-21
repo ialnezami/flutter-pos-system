@@ -11,7 +11,8 @@ class LanguageSetting extends Setting<Language?> {
   static final instance = LanguageSetting._();
 
   LanguageSetting._() {
-    value = null;
+    // Set Arabic as default language
+    value = Language.ar;
   }
 
   @override
@@ -27,7 +28,7 @@ class LanguageSetting extends Setting<Language?> {
     _systemLanguage ??= parseLanguage(locale)!;
   }
 
-  Language get language => value ?? _systemLanguage ?? Language.en;
+  Language get language => value ?? _systemLanguage ?? Language.ar;
 
   @override
   void initialize() {
@@ -50,8 +51,9 @@ class LanguageSetting extends Setting<Language?> {
 }
 
 enum Language {
-  zhTW(Locale('zh', 'TW'), '繁體中文'),
-  en(Locale('en'), 'English');
+  ar(Locale('ar'), 'العربية'),
+  en(Locale('en'), 'English'),
+  zhTW(Locale('zh', 'TW'), '繁體中文');
 
   final Locale locale;
 
