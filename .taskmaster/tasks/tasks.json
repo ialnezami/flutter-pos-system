@@ -338,11 +338,26 @@
         ],
         "status": "pending",
         "subtasks": []
+      },
+      {
+        "id": 26,
+        "title": "Comprehensive Barcode Scanning & Generation System",
+        "description": "Implement a robust barcode scanning system supporting camera, USB scanners, and barcode generation, integrated with product lookup and cart functionality, including Arabic interface support.",
+        "details": "Develop a comprehensive barcode system for the POS desktop application. This includes:\n1.  **Camera-based Scanning:** Integrate a camera library (e.g., `camera` package for Flutter desktop or platform-specific APIs via FFI/platform channels) to capture video streams and detect barcodes in real-time. Implement a dedicated scanning view.\n2.  **USB Scanner Support:** Implement listeners for USB HID devices to capture barcode input. This will likely require platform channels for native integration on Windows, macOS, and Linux to read input from connected USB barcode scanners.\n3.  **Barcode Generation:** Implement functionality to generate and display various barcode types (e.g., Code 128, QR Code) for products that may not have an existing barcode, or for internal inventory management. Utilize a library like `barcode_widget` or `qr_flutter`.\n4.  **Barcode Format Support:** Ensure the system can accurately read and process all major barcode formats including EAN-8/13, UPC-A/E, Code 128/39, and QR codes.\n5.  **Instant Product Lookup:** Upon successful barcode scan or manual entry, query the local database (`Products` table via `ProductRepository`) for the corresponding product and display its details instantly.\n6.  **Cart Integration:** Automatically add the identified product to the current sales cart on the POS screen, handling quantity increments for multiple scans of the same item.\n7.  **Arabic Interface Integration:** Ensure all UI elements related to barcode scanning, manual entry, and generation are fully localized and display correctly with Right-to-Left (RTL) layout support for the Arabic language.\n8.  **Error Handling:** Implement robust error handling for scenarios such as unreadable barcodes, product not found, scanner connection issues, or camera access failures.\n9.  **Performance Optimization:** Optimize scanning and lookup processes for speed and responsiveness, crucial for a high-volume POS environment.",
+        "testStrategy": "1.  **Unit Tests:**\n    *   Write unit tests for barcode parsing logic to ensure accurate extraction of data from various barcode formats.\n    *   Test the `ProductRepository` lookup methods with mock barcodes, verifying correct product retrieval and handling of 'product not found' scenarios.\n    *   Test cart integration logic, ensuring products are added correctly, quantities are updated, and totals reflect the additions.\n2.  **Widget Tests:**\n    *   Develop widget tests for the barcode scanning UI, verifying camera feed display (if applicable), manual input fields, and visual feedback for successful/failed scans.\n    *   Test the barcode generation UI, ensuring generated barcodes are displayed correctly and can be saved/printed.\n    *   Verify Arabic localization and RTL layout for all barcode-related screens and components.\n3.  **Integration Tests:**\n    *   Conduct end-to-end integration tests using a physical USB barcode scanner and/or a webcam to simulate real-world scanning scenarios for all supported barcode types (EAN, UPC, Code 128, QR).\n    *   Verify that scanning a product barcode correctly identifies the product, adds it to the cart on the POS screen, and updates the cart total.\n    *   Test scenarios where a barcode is scanned but no matching product is found in the database.\n    *   Test the barcode generation feature by generating a barcode for a product and then attempting to scan it back into the system.\n    *   Verify the entire flow from scanning a product to its appearance in the cart, ensuring data consistency and UI responsiveness.\n    *   Test error handling mechanisms by simulating scanner disconnections or unreadable barcodes.",
+        "status": "pending",
+        "dependencies": [
+          2,
+          5,
+          8
+        ],
+        "priority": "medium",
+        "subtasks": []
       }
     ],
     "metadata": {
       "created": "2025-09-20T03:28:34.010Z",
-      "updated": "2025-09-21T06:54:17.331Z",
+      "updated": "2025-09-21T08:08:08.311Z",
       "description": "Tasks for master context"
     }
   }

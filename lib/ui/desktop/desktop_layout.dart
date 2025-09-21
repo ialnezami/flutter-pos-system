@@ -4,6 +4,8 @@ import 'package:possystem/models/clothing/clothing_product.dart';
 import 'package:possystem/models/clothing/product_variant.dart';
 import 'package:possystem/ui/clothing/size_color_selector.dart';
 import 'package:possystem/ui/clothing/product_variant_card.dart';
+import 'package:possystem/ui/barcode/barcode_scanner_widget.dart';
+import 'package:possystem/services/barcode_service.dart';
 import 'package:possystem/l10n/clothing_localizations.dart';
 
 class DesktopPOSLayout extends StatefulWidget {
@@ -94,21 +96,33 @@ class _DesktopPOSLayoutState extends State<DesktopPOSLayout> {
               ),
               const SizedBox(height: 8),
               // Search Bar
-              TextField(
-                focusNode: _searchFocusNode,
-                decoration: InputDecoration(
-                  hintText: 'البحث عن المنتجات... (Ctrl+F)',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      focusNode: _searchFocusNode,
+                      decoration: InputDecoration(
+                        hintText: 'البحث أو مسح الباركود... (Ctrl+F)',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: IconButton(
+                          onPressed: _showBarcodeScanner,
+                          icon: const Icon(Icons.qr_code_scanner),
+                          tooltip: 'مسح الباركود',
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                      },
+                      onSubmitted: _handleSearchOrBarcode,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
+                ],
               ),
             ],
           ),
@@ -829,6 +843,347 @@ class _DesktopPOSLayoutState extends State<DesktopPOSLayout> {
 
   void _showAddProductDialog() {
     // Show add product dialog
+  }
+
+  void _showInventoryDialog() {
+    // Show inventory management dialog
+  }
+
+  void _showBarcodeScanner() {
+    showDialog(
+      context: context,
+      builder: (context) => BarcodeScannerDialog(
+        title: 'مسح باركود المنتج',
+        subtitle: 'وجه الكاميرا نحو باركود المنتج',
+        onBarcodeDetected: _handleBarcodeResult,
+      ),
+    );
+  }
+
+  void _handleBarcodeResult(BarcodeResult result) {
+    if (result.hasVariant && result.hasProduct) {
+      // Product found - add to cart
+      _addToCartFromBarcode(result.product!, result.variant!);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم العثور على المنتج: ${result.product!.name}'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'عرض',
+            onPressed: () => _showProductDetailsFromBarcode(result),
+          ),
+        ),
+      );
+    } else {
+      // Product not found
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('لم يتم العثور على منتج بالباركود: ${result.code}'),
+          backgroundColor: Colors.orange,
+          action: SnackBarAction(
+            label: 'إضافة منتج',
+            onPressed: () => _showAddProductWithBarcode(result.code),
+          ),
+        ),
+      );
+    }
+  }
+
+  void _handleSearchOrBarcode(String input) {
+    if (input.trim().isEmpty) return;
+    
+    // Check if input looks like a barcode (numeric and specific length)
+    if (RegExp(r'^\d{8,13}$').hasMatch(input.trim())) {
+      // Treat as barcode
+      final result = BarcodeService.instance.lookupProductByBarcode(input.trim());
+      _handleBarcodeResult(result);
+    } else {
+      // Treat as search query
+      setState(() {
+        _searchQuery = input;
+      });
+    }
+  }
+
+  void _addToCartFromBarcode(ClothingProduct product, ProductVariant variant) {
+    setState(() {
+      _cartItems.add(CartItem(
+        productName: product.name,
+        size: variant.size,
+        color: variant.color,
+        price: product.getVariantPrice(variant.id).toDouble(),
+        quantity: 1,
+      ));
+    });
+  }
+
+  void _showProductDetailsFromBarcode(BarcodeResult result) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 600,
+          height: 500,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.qr_code),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'منتج ممسوح',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            'الباركود: ${result.code}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (result.hasProduct) ...[
+                        Text(
+                          'اسم المنتج: ${result.product!.name}',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text('الماركة: ${result.product!.brand}'),
+                        Text('الفئة: ${result.product!.category.displayName}'),
+                        if (result.hasVariant) ...[
+                          const SizedBox(height: 8),
+                          Text('المقاس: ${result.variant!.size}'),
+                          Text('اللون: ${result.variant!.color}'),
+                          Text('المخزون: ${result.variant!.stockQuantity}'),
+                          Text('السعر: ${result.product!.getVariantPrice(result.variant!.id).toStringAsFixed(2)} ر.س'),
+                        ],
+                      ] else ...[
+                        const Text('لم يتم العثور على المنتج'),
+                        const SizedBox(height: 8),
+                        Text('الباركود: ${result.code}'),
+                        Text('النوع: ${result.format.displayName}'),
+                      ],
+                      
+                      const Spacer(),
+                      
+                      // Actions
+                      if (result.hasProduct && result.hasVariant) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              _addToCartFromBarcode(result.product!, result.variant!);
+                              Navigator.of(context).pop();
+                            },
+                            icon: const Icon(Icons.add_shopping_cart),
+                            label: const Text('أضف للسلة'),
+                          ),
+                        ),
+                      ] else ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _showAddProductWithBarcode(result.code);
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('إضافة منتج جديد'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAddProductWithBarcode(String barcode) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة منتج جديد'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('تم مسح باركود جديد: $barcode'),
+            const SizedBox(height: 16),
+            const Text('هل تريد إضافة منتج جديد بهذا الباركود؟'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Navigate to add product screen with pre-filled barcode
+              _showAddProductDialog(prefilledBarcode: barcode);
+            },
+            child: const Text('إضافة منتج'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddProductDialog({String? prefilledBarcode}) {
+    // Show add product dialog with optional pre-filled barcode
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 500,
+          height: 400,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.add),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'إضافة منتج جديد',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Content
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      if (prefilledBarcode != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.qr_code),
+                              const SizedBox(width: 8),
+                              Text('الباركود: $prefilledBarcode'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      
+                      // Quick form fields
+                      TextField(
+                        decoration: const InputDecoration(
+                          labelText: 'اسم المنتج',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        decoration: const InputDecoration(
+                          labelText: 'الماركة',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        decoration: const InputDecoration(
+                          labelText: 'السعر (ر.س)',
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                      
+                      const Spacer(),
+                      
+                      // Actions
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('إلغاء'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('تم إضافة المنتج بنجاح'),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              },
+                              child: const Text('حفظ'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showInventoryDialog() {
