@@ -332,141 +332,381 @@ class _CompletePOSHomeState extends State<CompletePOSHome> {
   }
 
   Widget _buildCashierPage() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Cashier Header
-          Card(
-            color: Colors.green[50],
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Icon(Icons.point_of_sale, size: 48, color: Colors.green[700]),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      children: [
+        // Products Panel (Left Side)
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Cashier Header
+                Card(
+                  color: Colors.green[50],
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
                       children: [
-                        Text('واجهة الكاشير', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                        Text('ابحث عن المنتجات، أضفها للسلة، واتمم عملية الدفع'),
+                        Icon(Icons.point_of_sale, size: 48, color: Colors.green[700]),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('واجهة الكاشير', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                              Text('ابحث عن المنتجات وأضفها للسلة'),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 16),
 
-          // Search and Actions
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: 'البحث عن المنتجات',
-                      hintText: 'ادخل اسم المنتج، الباركود، أو الفئة',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.qr_code_scanner),
-                        onPressed: _showBarcodeScanner,
-                      ),
-                      border: const OutlineInputBorder(),
+                // Search Bar
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        TextField(
+                          decoration: InputDecoration(
+                            labelText: 'البحث عن المنتجات',
+                            hintText: 'ادخل اسم المنتج، الباركود، أو الفئة',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.qr_code_scanner),
+                              onPressed: _showBarcodeScanner,
+                            ),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _addSampleProduct,
+                                icon: const Icon(Icons.add_shopping_cart),
+                                label: const Text('إضافة سريعة'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _clearCart,
+                                icon: const Icon(Icons.clear_all),
+                                label: const Text('مسح السلة'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
+                ),
+                const SizedBox(height: 16),
+
+                // Products Grid
+                const Text('المنتجات المتاحة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.8,
                     children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _addSampleProduct,
-                          icon: const Icon(Icons.add_shopping_cart),
-                          label: const Text('إضافة منتج للسلة'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _clearCart,
-                          icon: const Icon(Icons.clear_all),
-                          label: const Text('مسح السلة'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
+                      _buildProductCard('قميص أزرق', 'قمصان', 120.0, 'متوسط', 'أزرق', 25),
+                      _buildProductCard('بنطلون أسود', 'بناطيل', 280.0, '34', 'أسود', 18),
+                      _buildProductCard('فستان أحمر', 'فساتين', 450.0, 'صغير', 'أحمر', 8),
+                      _buildProductCard('حذاء بني', 'أحذية', 350.0, '42', 'بني', 15),
+                      _buildProductCard('حقيبة يد', 'حقائب', 380.0, 'متوسط', 'أسود', 12),
+                      _buildProductCard('ساعة ذهبية', 'ساعات', 850.0, 'قياس واحد', 'ذهبي', 3),
+                      _buildProductCard('نظارة شمس', 'نظارات', 250.0, 'قياس واحد', 'أسود', 15),
+                      _buildProductCard('حزام جلد', 'أحزمة', 180.0, '85 سم', 'بني', 20),
+                      _buildProductCard('جوارب قطنية', 'جوارب', 25.0, '39-42', 'أسود', 50),
                     ],
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Products Grid
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: [
-                _buildProductCard('قميص أزرق', 'قمصان', 120.0, 'متوسط', 'أزرق', 25),
-                _buildProductCard('بنطلون أسود', 'بناطيل', 280.0, '34', 'أسود', 18),
-                _buildProductCard('فستان أحمر', 'فساتين', 450.0, 'صغير', 'أحمر', 8),
-                _buildProductCard('حذاء بني', 'أحذية', 350.0, '42', 'بني', 15),
-                _buildProductCard('حقيبة يد', 'حقائب', 380.0, 'متوسط', 'أسود', 12),
-                _buildProductCard('ساعة ذهبية', 'ساعات', 850.0, 'قياس واحد', 'ذهبي', 3),
-                _buildProductCard('نظارة شمس', 'نظارات', 250.0, 'قياس واحد', 'أسود', 15),
-                _buildProductCard('حزام جلد', 'أحزمة', 180.0, '85 سم', 'بني', 20),
+                ),
               ],
             ),
           ),
+        ),
 
-          // Cart and Payment
-          Card(
-            color: Colors.blue[50],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.shopping_cart, color: Colors.blue[700]),
-                      const SizedBox(width: 8),
-                      Text('السلة: ${_cart.length} منتجات'),
-                      const Spacer(),
-                      Text('الإجمالي: ${_calculateTotal().toStringAsFixed(2)} ر.س'),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _showPaymentDialog,
-                      icon: const Icon(Icons.payment),
-                      label: const Text('الدفع وطباعة الفاتورة'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+        // Cart Panel (Right Side)
+        Container(
+          width: 400,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            border: Border(
+              right: BorderSide(color: Theme.of(context).dividerColor),
             ),
           ),
-        ],
-      ),
+          child: Column(
+            children: [
+              // Cart Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.shopping_cart, color: Theme.of(context).colorScheme.primary, size: 32),
+                    const SizedBox(width: 12),
+                    Text(
+                      'تفاصيل الطلب (${_cart.length})',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (_cart.isNotEmpty)
+                      IconButton(
+                        onPressed: _clearCart,
+                        icon: const Icon(Icons.delete_outline),
+                        tooltip: 'مسح السلة',
+                      ),
+                  ],
+                ),
+              ),
+
+              // Cart Items List
+              Expanded(
+                child: _cart.isEmpty
+                    ? const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey),
+                            SizedBox(height: 16),
+                            Text(
+                              'السلة فارغة',
+                              style: TextStyle(fontSize: 20, color: Colors.grey, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'اختر المنتجات من اليسار\nلإضافتها إلى السلة',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: _cart.length,
+                        itemBuilder: (context, index) {
+                          final item = _cart[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            elevation: 2,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  // Product Info Row
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(Icons.checkroom, size: 24),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            Text(
+                                              '${item.price.toStringAsFixed(2)} ر.س للقطعة',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => _removeFromCart(index),
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        tooltip: 'حذف من السلة',
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  
+                                  // Quantity Controls Row
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () => _decreaseQuantity(index),
+                                        icon: const Icon(Icons.remove_circle_outline),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Colors.grey[200],
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 12),
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: Colors.grey[300]!),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '${item.quantity}',
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      IconButton(
+                                        onPressed: () => _increaseQuantity(index),
+                                        icon: const Icon(Icons.add_circle_outline),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text('الإجمالي', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                          Text(
+                                            '${item.totalPrice.toStringAsFixed(2)} ر.س',
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+
+              // Cart Summary and Checkout
+              if (_cart.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      top: BorderSide(color: Theme.of(context).dividerColor),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Order Summary
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('عدد الأصناف:'),
+                                Text('${_cart.length}'),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('إجمالي القطع:'),
+                                Text('${_cart.fold(0, (sum, item) => sum + item.quantity)}'),
+                              ],
+                            ),
+                            const Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'المجموع الكلي:',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '${_calculateTotal().toStringAsFixed(2)} ر.س',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Checkout Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _showPaymentDialog,
+                          icon: const Icon(Icons.payment, size: 24),
+                          label: const Text('الدفع وطباعة الفاتورة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -809,10 +1049,60 @@ class _CompletePOSHomeState extends State<CompletePOSHome> {
     _addToCart('قميص أزرق', 120.0);
   }
 
-  void _clearCart() {
-    setState(() => _cart.clear());
+  void _removeFromCart(int index) {
+    final itemName = _cart[index].name;
+    setState(() => _cart.removeAt(index));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم مسح السلة'), backgroundColor: Colors.orange),
+      SnackBar(
+        content: Text('تم حذف $itemName من السلة'),
+        backgroundColor: Colors.orange,
+      ),
+    );
+  }
+
+  void _increaseQuantity(int index) {
+    setState(() => _cart[index].quantity++);
+  }
+
+  void _decreaseQuantity(int index) {
+    setState(() {
+      if (_cart[index].quantity > 1) {
+        _cart[index].quantity--;
+      } else {
+        _removeFromCart(index);
+      }
+    });
+  }
+
+  void _clearCart() {
+    if (_cart.isEmpty) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('مسح السلة'),
+        content: const Text('هل تريد مسح جميع المنتجات من السلة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() => _cart.clear());
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('تم مسح السلة'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: const Text('مسح'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1085,25 +1375,151 @@ class _CompletePOSHomeState extends State<CompletePOSHome> {
   }
 
   void _showPaymentDialog() {
+    if (_cart.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('السلة فارغة! أضف منتجات أولاً'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final totalAmount = _calculateTotal();
+    final totalItems = _cart.fold(0, (sum, item) => sum + item.quantity);
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('إتمام عملية الدفع'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('عدد المنتجات: ${_cart.length}'),
-            Text('الإجمالي: ${_calculateTotal().toStringAsFixed(2)} ر.س'),
-            const SizedBox(height: 16),
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'المبلغ المدفوع',
-                border: OutlineInputBorder(),
-                suffixText: 'ر.س',
+        content: SizedBox(
+          width: 450,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Order Summary
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('عدد الأصناف:'),
+                        Text('${_cart.length}'),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('إجمالي القطع:'),
+                        Text('$totalItems'),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'المجموع الكلي:',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${totalAmount.toStringAsFixed(2)} ر.س',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+              const SizedBox(height: 16),
+
+              // Cart Items Preview
+              const Align(
+                alignment: Alignment.centerRight,
+                child: Text('المنتجات في السلة:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                height: 150,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ListView.builder(
+                  itemCount: _cart.length,
+                  itemBuilder: (context, index) {
+                    final item = _cart[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(item.name)),
+                          Text('${item.quantity} × ${item.price.toStringAsFixed(2)}'),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${item.totalPrice.toStringAsFixed(2)} ر.س',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Payment Method
+              const Align(
+                alignment: Alignment.centerRight,
+                child: Text('طريقة الدفع:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('نقدي'),
+                      value: 'cash',
+                      groupValue: 'cash',
+                      onChanged: (value) {},
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<String>(
+                      title: const Text('بطاقة'),
+                      value: 'card',
+                      groupValue: 'cash',
+                      onChanged: (value) {},
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Payment Amount
+              TextField(
+                decoration: InputDecoration(
+                  labelText: 'المبلغ المدفوع',
+                  border: const OutlineInputBorder(),
+                  suffixText: 'ر.س',
+                  prefixIcon: const Icon(Icons.payments),
+                  hintText: totalAmount.toStringAsFixed(2),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء')),
@@ -1122,46 +1538,116 @@ class _CompletePOSHomeState extends State<CompletePOSHome> {
   }
 
   void _showReceiptDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('فاتورة البيع'),
-        content: Container(
-          width: 300,
-          height: 400,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: const Text(
-            '''=======================================
+    final now = DateTime.now();
+    final dateTime = '${now.day}/${now.month}/${now.year} ${now.hour}:${now.minute.toString().padLeft(2, '0')}';
+    final receiptId = now.millisecondsSinceEpoch;
+    
+    String receiptContent = '''=======================================
         متجر الملابس والإكسسوارات
 =======================================
-التاريخ: 21/09/2025 15:00
-رقم الفاتورة: 12345
-الكاشير: admin
+التاريخ: $dateTime
+رقم الفاتورة: $receiptId
+الكاشير: ${AuthService.currentUser}
 =======================================
 
-المنتجات المباعة ستظهر هنا
+''';
 
-=======================================
-الإجمالي: 0.00 ر.س
+    for (final item in _cart) {
+      receiptContent += '''${item.name}
+${item.quantity} × ${item.price.toStringAsFixed(2)} = ${item.totalPrice.toStringAsFixed(2)} ر.س
+
+''';
+    }
+
+    final totalItems = _cart.fold(0, (sum, item) => sum + item.quantity);
+    final totalAmount = _calculateTotal();
+
+    receiptContent += '''=======================================
+عدد الأصناف: ${_cart.length}
+إجمالي القطع: $totalItems
+
+المجموع الكلي: ${totalAmount.toStringAsFixed(2)} ر.س
 طريقة الدفع: نقدي
 =======================================
         شكراً لتسوقكم معنا
-=======================================''',
-            style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+    نتطلع لخدمتكم مرة أخرى
+=======================================''';
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long, color: Colors.green),
+            const SizedBox(width: 8),
+            const Text('فاتورة البيع'),
+          ],
+        ),
+        content: Container(
+          width: 350,
+          height: 500,
+          child: Column(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    border: Border.all(color: Colors.grey[300]!),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SingleChildScrollView(
+                    child: Text(
+                      receiptContent,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إرسال الفاتورة للطابعة'),
+                            backgroundColor: Colors.blue,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.print),
+                      label: const Text('طباعة'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        setState(() => _cart.clear()); // Clear cart after successful payment
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('تم إتمام البيع بنجاح! 🎉'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.check),
+                      label: const Text('تم'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        actions: [
-          OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.print), label: const Text('طباعة')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('تم'),
-          ),
-        ],
       ),
     );
   }

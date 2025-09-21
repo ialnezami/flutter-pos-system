@@ -14,6 +14,7 @@ class EnhancedProduct {
   final int minStockLevel;
   final String? barcode;
   final String? description;
+  final List<String> imagePaths;
   final DateTime? createdDate;
   final DateTime? updatedDate;
 
@@ -31,6 +32,7 @@ class EnhancedProduct {
     this.minStockLevel = 5,
     this.barcode,
     this.description,
+    this.imagePaths = const [],
     this.createdDate,
     this.updatedDate,
   });
@@ -62,6 +64,7 @@ class EnhancedProduct {
       minStockLevel: map['min_stock_level'] ?? 5,
       barcode: map['barcode'],
       description: map['description'],
+      imagePaths: map['image_paths'] != null ? (map['image_paths'] as String).split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() : [],
       createdDate: map['created_date'] != null ? DateTime.tryParse(map['created_date']) : null,
       updatedDate: map['updated_date'] != null ? DateTime.tryParse(map['updated_date']) : null,
     );
@@ -82,6 +85,7 @@ class EnhancedProduct {
       'min_stock_level': minStockLevel,
       'barcode': barcode,
       'description': description,
+      'image_paths': imagePaths.join(','),
       'created_date': createdDate?.toIso8601String(),
       'updated_date': updatedDate?.toIso8601String(),
     };
@@ -102,6 +106,7 @@ class EnhancedProduct {
     int? minStockLevel,
     String? barcode,
     String? description,
+    List<String>? imagePaths,
     DateTime? createdDate,
     DateTime? updatedDate,
   }) {
@@ -119,6 +124,7 @@ class EnhancedProduct {
       minStockLevel: minStockLevel ?? this.minStockLevel,
       barcode: barcode ?? this.barcode,
       description: description ?? this.description,
+      imagePaths: imagePaths ?? this.imagePaths,
       createdDate: createdDate ?? this.createdDate,
       updatedDate: updatedDate ?? this.updatedDate,
     );
@@ -144,6 +150,7 @@ class ProductFormData {
   int minStockLevel = 5;
   String barcode = '';
   String description = '';
+  List<String> imagePaths = [];
 
   bool get isValid {
     return name.isNotEmpty &&
@@ -182,6 +189,7 @@ class ProductFormData {
       minStockLevel: minStockLevel,
       barcode: barcode.isEmpty ? null : barcode,
       description: description.isEmpty ? null : description,
+      imagePaths: imagePaths,
       createdDate: DateTime.now(),
       updatedDate: DateTime.now(),
     );

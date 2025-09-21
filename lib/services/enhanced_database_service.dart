@@ -140,6 +140,7 @@ class EnhancedDatabaseService {
         min_stock_level INTEGER DEFAULT 5,
         barcode TEXT UNIQUE,
         description TEXT,
+        image_paths TEXT,
         created_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
@@ -509,5 +510,111 @@ class EnhancedDatabaseService {
     final directory = await getApplicationDocumentsDirectory();
     final file = File('${directory.path}/$fileName');
     return file.writeAsString(content);
+  }
+
+  // Photo management functions
+  Future<List<String>> getProductImages(int productId) async {
+    final db = await database;
+    final result = await db.query('products', where: 'id = ?', whereArgs: [productId]);
+    if (result.isEmpty) return [];
+    
+    final imagePaths = result.first['image_paths'] as String?;
+    if (imagePaths == null || imagePaths.isEmpty) return [];
+    
+    return imagePaths.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+  }
+
+  Future<void> updateProductImages(int productId, List<String> imagePaths) async {
+    final db = await database;
+    await db.update(
+      'products',
+      {
+        'image_paths': imagePaths.join(','),
+        'updated_date': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  Future<void> deleteProductWithImages(int productId) async {
+    final db = await database;
+    
+    // Get product images before deletion
+    final imagePaths = await getProductImages(productId);
+    
+    // Delete the product from database
+    await db.delete('products', where: 'id = ?', whereArgs: [productId]);
+    
+    // Delete all associated image files
+    await _deleteImageFiles(imagePaths);
+  }
+
+  Future<void> _deleteImageFiles(List<String> imagePaths) async {
+    for (final imagePath in imagePaths) {
+      try {
+        final file = File(imagePath);
+        if (await file.exists()) {
+          await file.delete();
+          print('Deleted image file: $imagePath');
+        }
+      } catch (e) {
+        print('Error deleting image file $imagePath: $e');
+      }
+    }
+  }
+
+  Future<String> saveProductImage(String imagePath, int productId) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final productImagesDir = Directory('${directory.path}/product_images');
+    
+    // Create directory if it doesn't exist
+    if (!await productImagesDir.exists()) {
+      await productImagesDir.create(recursive: true);
+    }
+    
+    // Generate unique filename
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final extension = imagePath.split('.').last;
+    final newFileName = 'product_${productId}_$timestamp.$extension';
+    final newPath = '${productImagesDir.path}/$newFileName';
+    
+    // Copy image to app directory
+    final sourceFile = File(imagePath);
+    final targetFile = await sourceFile.copy(newPath);
+    
+    return targetFile.path;
+  }
+
+  Future<void> cleanupUnusedImages() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final productImagesDir = Directory('${directory.path}/product_images');
+      
+      if (!await productImagesDir.exists()) return;
+      
+      // Get all image paths from database
+      final db = await database;
+      final products = await db.query('products', columns: ['image_paths']);
+      
+      Set<String> usedImages = {};
+      for (final product in products) {
+        final imagePaths = product['image_paths'] as String?;
+        if (imagePaths != null && imagePaths.isNotEmpty) {
+          usedImages.addAll(imagePaths.split(',').map((e) => e.trim()));
+        }
+      }
+      
+      // Delete unused image files
+      final imageFiles = await productImagesDir.list().toList();
+      for (final file in imageFiles) {
+        if (file is File && !usedImages.contains(file.path)) {
+          await file.delete();
+          print('Cleaned up unused image: ${file.path}');
+        }
+      }
+    } catch (e) {
+      print('Error during image cleanup: $e');
+    }
   }
 }
