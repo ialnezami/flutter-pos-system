@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'services/database_service.dart';
+import 'services/enhanced_database_service.dart';
+import 'models/enhanced_product.dart';
+import 'widgets/add_product_form.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 
@@ -219,9 +221,9 @@ class _POSHomePageState extends State<POSHomePage> {
   int _dailyTransactions = 0;
   double _dailyProfit = 0.0;
   
-  List<Product> _products = [];
-  List<Product> _filteredProducts = [];
-  final DatabaseService _dbService = DatabaseService();
+  List<EnhancedProduct> _products = [];
+  List<EnhancedProduct> _filteredProducts = [];
+  final EnhancedDatabaseService _dbService = EnhancedDatabaseService();
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
 
@@ -237,7 +239,7 @@ class _POSHomePageState extends State<POSHomePage> {
     try {
       // Load products from database
       final productsData = await _dbService.getAllProducts();
-      _products = productsData.map((data) => Product.fromMap(data)).toList();
+      _products = productsData.map((data) => EnhancedProduct.fromMap(data)).toList();
       _filteredProducts = _products;
       
       // Load daily summary
@@ -257,9 +259,16 @@ class _POSHomePageState extends State<POSHomePage> {
     setState(() => _isLoading = false);
   }
 
-  void _addToCart(Product product) {
+  void _addToCart(EnhancedProduct product) {
+    // Check if product already in cart
+    final existingIndex = _cartItems.indexWhere((item) => item.product.id == product.id);
+    
     setState(() {
-      _cartItems.add(CartItem(product: product, quantity: 1));
+      if (existingIndex >= 0) {
+        _cartItems[existingIndex].quantity++;
+      } else {
+        _cartItems.add(CartItem(product: product, quantity: 1));
+      }
       _calculateTotal();
     });
     
@@ -272,7 +281,7 @@ class _POSHomePageState extends State<POSHomePage> {
   }
 
   void _calculateTotal() {
-    _totalAmount = _cartItems.fold(0.0, (sum, item) => sum + (item.product.price * item.quantity));
+    _totalAmount = _cartItems.fold(0.0, (sum, item) => sum + (item.product.sellPrice * item.quantity));
   }
 
   void _filterProducts(String query) {
@@ -285,6 +294,8 @@ class _POSHomePageState extends State<POSHomePage> {
                  product.category.toLowerCase().contains(query.toLowerCase()) ||
                  product.size.toLowerCase().contains(query.toLowerCase()) ||
                  product.color.toLowerCase().contains(query.toLowerCase()) ||
+                 product.material.toLowerCase().contains(query.toLowerCase()) ||
+                 product.tags.any((tag) => tag.toLowerCase().contains(query.toLowerCase())) ||
                  (product.barcode != null && product.barcode!.contains(query));
         }).toList();
       }
@@ -367,12 +378,14 @@ class _POSHomePageState extends State<POSHomePage> {
   void _searchByBarcode(String barcode) {
     final product = _products.firstWhere(
       (p) => p.barcode == barcode,
-      orElse: () => Product(
+      orElse: () => EnhancedProduct(
         name: 'غير موجود',
         category: '',
-        price: 0,
+        buyPrice: 0,
+        sellPrice: 0,
         size: '',
         color: '',
+        material: '',
       ),
     );
     
@@ -601,8 +614,10 @@ class _POSHomePageState extends State<POSHomePage> {
       final saleItems = _cartItems.map((item) => {
         'product_id': item.product.id,
         'quantity': item.quantity,
-        'unit_price': item.product.price,
-        'total_price': item.product.price * item.quantity,
+        'buy_price': item.product.buyPrice,
+        'sell_price': item.product.sellPrice,
+        'total_cost': item.product.buyPrice * item.quantity,
+        'total_price': item.product.sellPrice * item.quantity,
       }).toList();
       
       // Save to database
@@ -727,8 +742,8 @@ class _POSHomePageState extends State<POSHomePage> {
 
     for (final item in _cartItems) {
       receipt += '''${item.product.name}
-${item.product.size} • ${item.product.color}
-${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.price * item.quantity).toStringAsFixed(2)} ر.س
+${item.product.category} - ${item.product.size} • ${item.product.color}
+${item.quantity} × ${item.product.sellPrice.toStringAsFixed(2)} = ${(item.product.sellPrice * item.quantity).toStringAsFixed(2)} ر.س
 
 ''';
     }
@@ -1002,7 +1017,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.p
                                     ),
                                     const Spacer(),
                                     Text(
-                                      '${product.price.toStringAsFixed(2)} ر.س',
+                                      '${product.sellPrice.toStringAsFixed(2)} ر.س',
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         color: Theme.of(context).colorScheme.primary,
                                         fontWeight: FontWeight.bold,
@@ -1064,7 +1079,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.p
                                     children: [
                                       Text('${item.quantity}x'),
                                       const SizedBox(width: 8),
-                                      Text('${(item.product.price * item.quantity).toStringAsFixed(2)} ر.س'),
+                                      Text('${(item.product.sellPrice * item.quantity).toStringAsFixed(2)} ر.س'),
                                       IconButton(
                                         icon: const Icon(Icons.remove_circle_outline),
                                         onPressed: () {
@@ -1168,7 +1183,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.p
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '${product.price.toStringAsFixed(2)} ر.س',
+                          '${product.sellPrice.toStringAsFixed(2)} ر.س',
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         Text(
@@ -1405,64 +1420,63 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.p
   }
 
   void _showAddProductDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('إضافة منتج جديد'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'اسم المنتج',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'السعر (ر.س)',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddProductForm(
+          onProductAdded: (product) {
+            _loadData(); // Refresh the product list
+          },
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('تم إضافة المنتج بنجاح')),
-              );
-            },
-            child: const Text('إضافة'),
-          ),
-        ],
       ),
     );
   }
 
-  void _showProductDetailsDialog(Product product) {
+  void _showProductDetailsDialog(EnhancedProduct product) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(product.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('الفئة: ${product.category}'),
-            Text('المقاس: ${product.size}'),
-            Text('اللون: ${product.color}'),
-            Text('السعر: ${product.price.toStringAsFixed(2)} ر.س'),
-            Text('المخزون: ${product.stockQuantity} قطعة'),
-            if (product.barcode != null) Text('الباركود: ${product.barcode}'),
-          ],
+        content: SizedBox(
+          width: 350,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('الفئة: ${product.category}'),
+              Text('المقاس: ${product.size}'),
+              Text('اللون: ${product.color}'),
+              Text('المادة: ${product.material}'),
+              if (product.tags.isNotEmpty) 
+                Text('العلامات: ${product.tags.join(', ')}'),
+              const Divider(),
+              Text('سعر الشراء: ${product.buyPrice.toStringAsFixed(2)} ر.س'),
+              Text('سعر البيع: ${product.sellPrice.toStringAsFixed(2)} ر.س'),
+              Text(
+                'الربح: ${product.profitAmount.toStringAsFixed(2)} ر.س (${product.profitMargin.toStringAsFixed(1)}%)',
+                style: TextStyle(
+                  color: product.isProfitable ? Colors.green : Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Divider(),
+              Text(
+                'المخزون: ${product.stockQuantity} قطعة',
+                style: TextStyle(
+                  color: product.isLowStock ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (product.isLowStock)
+                Text(
+                  'تحذير: المخزون منخفض!',
+                  style: TextStyle(color: Colors.red[700], fontWeight: FontWeight.bold),
+                ),
+              if (product.barcode != null) Text('الباركود: ${product.barcode}'),
+              if (product.description != null && product.description!.isNotEmpty)
+                Text('الوصف: ${product.description}'),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -1787,57 +1801,13 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${(item.product.p
   }
 }
 
-class Product {
-  final int? id;
-  final String name;
-  final String category;
-  final double price;
-  final String size;
-  final String color;
-  final int stockQuantity;
-  final String? barcode;
-
-  Product({
-    this.id,
-    required this.name,
-    required this.category,
-    required this.price,
-    required this.size,
-    required this.color,
-    this.stockQuantity = 0,
-    this.barcode,
-  });
-
-  factory Product.fromMap(Map<String, dynamic> map) {
-    return Product(
-      id: map['id'],
-      name: map['name'],
-      category: map['category'],
-      price: (map['price'] as num).toDouble(),
-      size: map['size'],
-      color: map['color'],
-      stockQuantity: map['stock_quantity'] ?? 0,
-      barcode: map['barcode'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'name': name,
-      'category': category,
-      'price': price,
-      'size': size,
-      'color': color,
-      'stock_quantity': stockQuantity,
-      'barcode': barcode,
-    };
-  }
-}
-
 class CartItem {
-  final Product product;
+  final EnhancedProduct product;
   int quantity;
 
   CartItem({required this.product, this.quantity = 1});
+  
+  double get totalPrice => product.sellPrice * quantity;
+  double get totalCost => product.buyPrice * quantity;
+  double get totalProfit => totalPrice - totalCost;
 }
