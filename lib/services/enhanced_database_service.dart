@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:csv/csv.dart';
+import '../models/category.dart';
 
 // Enums for product attributes
 enum ProductSize {
@@ -315,8 +316,28 @@ class EnhancedDatabaseService {
   // Enhanced product insertion with all fields
   Future<int> insertProduct(Map<String, dynamic> product) async {
     final db = await database;
+    product['created_date'] = DateTime.now().toIso8601String();
     product['updated_date'] = DateTime.now().toIso8601String();
     return await db.insert('products', product);
+  }
+
+  // Update existing product
+  Future<void> updateProduct(int productId, Map<String, dynamic> product) async {
+    final db = await database;
+    product['updated_date'] = DateTime.now().toIso8601String();
+    await db.update(
+      'products',
+      product,
+      where: 'id = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  // Get single product by ID
+  Future<Map<String, dynamic>?> getProductById(int productId) async {
+    final db = await database;
+    final result = await db.query('products', where: 'id = ?', whereArgs: [productId]);
+    return result.isNotEmpty ? result.first : null;
   }
   
   Future<List<Map<String, dynamic>>> getAllProducts() async {

@@ -179,10 +179,11 @@ class _EnhancedProductFormState extends State<EnhancedProductForm>
             backgroundColor: Colors.green,
           ),
         );
+        widget.onProductSaved(product);
       } else {
         // Updating existing product
         final updatedProduct = product.copyWith(id: widget.product!.id);
-        await _dbService.updateProductImages(widget.product!.id!, _formData.imagePaths);
+        await _dbService.updateProduct(widget.product!.id!, updatedProduct.toMap());
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم تحديث المنتج بنجاح'),
