@@ -98,6 +98,13 @@ void main() async {
         child: const App(),
       ));
     },
-    (error, stack) => FirebaseCrashlytics.instance.recordError(error, stack, fatal: true),
+    (error, stack) {
+      if (firebaseInitialized) {
+        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      } else {
+        // Log error when Firebase is not available
+        print('Error (Firebase not available): $error\n$stack');
+      }
+    },
   );
 }
