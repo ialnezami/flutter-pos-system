@@ -102,7 +102,7 @@ class Printer {
     // Stub implementation
   }
   
-  Future<bool> connect() async {eeeeeeee
+  Future<bool> connect() async {
     // Stub implementation
     return true;
   }
