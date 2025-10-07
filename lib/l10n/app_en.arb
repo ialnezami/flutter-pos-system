@@ -1673,6 +1673,8 @@
   "orderCheckoutStashDialogRestoreContent": "This action will override the current cart contents.",
   "orderCheckoutStashDialogDeleteName": "order",
   "orderCheckoutAttributeTab": "Customer",
+  "orderCheckoutAttributeNoteTitle": "Order Notes",
+  "orderCheckoutAttributeNoteHint": "Add notes for this order...",
   "orderCheckoutDetailsTab": "Details",
   "orderCheckoutDetailsCalculatorLabelPaid": "Paid",
   "orderCheckoutDetailsCalculatorLabelChange": "Change",

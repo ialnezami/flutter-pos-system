@@ -16,7 +16,10 @@ class BluetoothDevice {
     this.connected = false
   });
   
-  Stream<dynamic> createSignalStream() => Stream.empty();
+  Stream<BluetoothSignal> createSignalStream() => Stream.periodic(
+    Duration(seconds: 2), 
+    (_) => BluetoothSignal.normal
+  );
 }
 
 class PrinterManufactory {
@@ -31,18 +34,11 @@ class PrinterManufactory {
 
 enum BluetoothSignal { 
   weak, normal, good;
-  
-  static List<BluetoothSignal> get values => [weak, normal, good];
 }
 
 enum PrinterStatus { 
   good, unrecoverable, writeFailed, paperJams, paperNotFound, 
   lowBattery, tooHot, uncovering, noResponse, unknown, printing;
-  
-  static List<PrinterStatus> get values => [
-    good, unrecoverable, writeFailed, paperJams, paperNotFound,
-    lowBattery, tooHot, uncovering, noResponse, unknown, printing
-  ];
   
   int get priority {
     switch (this) {
@@ -63,8 +59,6 @@ enum PrinterStatus {
 
 enum PrinterDensity { 
   normal, tight;
-  
-  static List<PrinterDensity> get values => [normal, tight];
 }
 
 enum BluetoothExceptionCode {
@@ -108,16 +102,18 @@ class Printer {
     // Stub implementation
   }
   
-  Future<void> connect() async {
+  Future<bool> connect() async {eeeeeeee
     // Stub implementation
+    return true;
   }
   
   Future<void> disconnect() async {
     // Stub implementation
   }
   
-  Future<void> draw(Uint8List image, {PrinterDensity? density}) async {
-    // Stub implementation
+  Stream<double> draw(Uint8List image, {PrinterDensity? density}) {
+    // Stub implementation - returns progress stream
+    return Stream.periodic(Duration(milliseconds: 100), (count) => (count + 1) * 10.0).take(10);
   }
 }
 
