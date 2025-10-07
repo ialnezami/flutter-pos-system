@@ -30,6 +30,8 @@ import 'settings/collect_events_setting.dart';
 import 'settings/settings_provider.dart';
 
 void main() async {
+  bool firebaseInitialized = false;
+  
   // Not all errors are caught by Flutter. Sometimes, errors are instead caught by Zones.
   await runZonedGuarded<Future<void>>(
     () async {
@@ -37,22 +39,28 @@ void main() async {
       final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
       FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-      Log.out('start with firebase: ${DefaultFirebaseOptions.currentPlatform.appId}', 'init');
+      // Initialize Firebase only on supported platforms (Android for this app)
+      try {
+        await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+        firebaseInitialized = true;
+        Log.out('start with firebase: ${DefaultFirebaseOptions.currentPlatform.appId}', 'init');
 
-      // https://firebase.google.com/docs/crashlytics/get-started?platform=flutter&authuser=0&hl=zh-tw#configure-crash-handlers
-      // Pass all uncaught errors from the framework to Crashlytics.
-      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-      // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-      PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-        return true;
-      };
+        // https://firebase.google.com/docs/crashlytics/get-started?platform=flutter&authuser=0&hl=zh-tw#configure-crash-handlers
+        // Pass all uncaught errors from the framework to Crashlytics.
+        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+        // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+        PlatformDispatcher.instance.onError = (error, stack) {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+          return true;
+        };
 
-      if (kDebugMode) {
-        await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
-        await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
-        await FirebaseInAppMessaging.instance.setMessagesSuppressed(true);
+        if (kDebugMode) {
+          await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
+          await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+          await FirebaseInAppMessaging.instance.setMessagesSuppressed(true);
+        }
+      } catch (e) {
+        Log.out('Firebase not available on this platform: $e', 'init');
       }
 
       await Database.instance.initialize(logWhenQuery: isLocalTest);
