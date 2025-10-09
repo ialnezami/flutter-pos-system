@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
+// Firebase imports commented out to run without Firebase
+// import 'package:firebase_analytics/firebase_analytics.dart';
+// import 'package:firebase_core/firebase_core.dart';
+// import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+// import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -14,7 +15,7 @@ import 'package:possystem/models/repository/cart.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
-import 'firebase_compatible_options.dart';
+// import 'firebase_compatible_options.dart';
 import 'helpers/logger.dart';
 import 'models/repository/cashier.dart';
 import 'models/repository/menu.dart';
@@ -30,7 +31,7 @@ import 'settings/collect_events_setting.dart';
 import 'settings/settings_provider.dart';
 
 void main() async {
-  bool firebaseInitialized = false;
+  // bool firebaseInitialized = false;
   
   // Not all errors are caught by Flutter. Sometimes, errors are instead caught by Zones.
   await runZonedGuarded<Future<void>>(
@@ -39,29 +40,32 @@ void main() async {
       final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
       FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
+      // Firebase initialization commented out
       // Initialize Firebase only on supported platforms (Android for this app)
-      try {
-        await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-        firebaseInitialized = true;
-        Log.out('start with firebase: ${DefaultFirebaseOptions.currentPlatform.appId}', 'init');
+      // try {
+      //   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      //   firebaseInitialized = true;
+      //   Log.out('start with firebase: ${DefaultFirebaseOptions.currentPlatform.appId}', 'init');
 
-        // https://firebase.google.com/docs/crashlytics/get-started?platform=flutter&authuser=0&hl=zh-tw#configure-crash-handlers
-        // Pass all uncaught errors from the framework to Crashlytics.
-        FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
-        // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
-        PlatformDispatcher.instance.onError = (error, stack) {
-          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-          return true;
-        };
+      //   // https://firebase.google.com/docs/crashlytics/get-started?platform=flutter&authuser=0&hl=zh-tw#configure-crash-handlers
+      //   // Pass all uncaught errors from the framework to Crashlytics.
+      //   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+      //   // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+      //   PlatformDispatcher.instance.onError = (error, stack) {
+      //     FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      //     return true;
+      //   };
 
-        if (kDebugMode) {
-          await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
-          await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
-          await FirebaseInAppMessaging.instance.setMessagesSuppressed(true);
-        }
-      } catch (e) {
-        Log.out('Firebase not available on this platform: $e', 'init');
-      }
+      //   if (kDebugMode) {
+      //     await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(false);
+      //     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(false);
+      //     await FirebaseInAppMessaging.instance.setMessagesSuppressed(true);
+      //   }
+      // } catch (e) {
+      //   Log.out('Firebase not available on this platform: $e', 'init');
+      // }
+      
+      Log.out('Starting app without Firebase', 'init');
 
       await Database.instance.initialize(logWhenQuery: isLocalTest);
       await Storage.instance.initialize();
@@ -99,12 +103,16 @@ void main() async {
       ));
     },
     (error, stack) {
-      if (firebaseInitialized) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      } else {
-        // Log error when Firebase is not available
-        print('Error (Firebase not available): $error\n$stack');
-      }
+      // Firebase error handling commented out
+      // if (firebaseInitialized) {
+      //   FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      // } else {
+      //   // Log error when Firebase is not available
+      //   print('Error (Firebase not available): $error\n$stack');
+      // }
+      
+      // Log error when Firebase is not available
+      print('Error: $error\n$stack');
     },
   );
 }
