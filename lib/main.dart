@@ -1277,6 +1277,8 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                     final totalAmount = (sale['total_amount'] as num).toDouble();
                     final profitAmount = (sale['profit_amount'] as num).toDouble();
                     final paymentMethod = sale['payment_method'] as String;
+                    final discountAmount = sale['discount_amount'] != null ? (sale['discount_amount'] as num).toDouble() : 0.0;
+                    final subtotal = sale['subtotal'] != null ? (sale['subtotal'] as num).toDouble() : totalAmount;
                     
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -1309,6 +1311,30 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                                 ),
                               ),
                             ),
+                            if (discountAmount > 0) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.discount, size: 12, color: Colors.orange[700]),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'خصم',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         subtitle: Column(
@@ -1321,12 +1347,27 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                               'الكاشير: ${sale['cashier_name']}',
                               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                             ),
+                            if (discountAmount > 0)
+                              Text(
+                                'خصم: ${discountAmount.toStringAsFixed(2)} ر.س',
+                                style: TextStyle(fontSize: 12, color: Colors.orange[700], fontWeight: FontWeight.bold),
+                              ),
                           ],
                         ),
                         trailing: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            if (discountAmount > 0) ...[
+                              Text(
+                                '${subtotal.toStringAsFixed(2)} ر.س',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ],
                             Text(
                               '${totalAmount.toStringAsFixed(2)} ر.س',
                               style: const TextStyle(
@@ -1375,47 +1416,81 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   void _showSaleDetails(Map<String, dynamic> sale) async {
     // Load sale items
     final saleItems = await _dbService.getSaleItems(sale['id'] as int);
+    final discountAmount = sale['discount_amount'] != null ? (sale['discount_amount'] as num).toDouble() : 0.0;
+    final subtotal = sale['subtotal'] != null ? (sale['subtotal'] as num).toDouble() : (sale['total_amount'] as num).toDouble();
+    final discountType = sale['discount_type'] as String?;
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تفاصيل فاتورة #${sale['id']}'),
+        title: Row(
+          children: [
+            const Icon(Icons.receipt_long, color: Colors.blue),
+            const SizedBox(width: 8),
+            Text('تفاصيل فاتورة #${sale['id']}'),
+          ],
+        ),
         content: SizedBox(
           width: 500,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Sale Info
-              _buildDetailRow('التاريخ', DateTime.parse(sale['sale_date'] as String).toString().substring(0, 16)),
-              _buildDetailRow('الكاشير', sale['cashier_name'] as String),
-              _buildDetailRow('طريقة الدفع', sale['payment_method'] == 'cash' ? 'نقدي' : 'بطاقة'),
-              const Divider(),
-              
-              // Items
-              const Text('المنتجات:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...saleItems.map((item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('${item['quantity']}x منتج #${item['product_id']}'),
-                    Text('${(item['total_price'] as num).toStringAsFixed(2)} ر.س'),
-                  ],
-                ),
-              )),
-              const Divider(),
-              
-              // Totals
-              _buildDetailRow('المجموع', '${(sale['total_amount'] as num).toStringAsFixed(2)} ر.س', isBold: true),
-              _buildDetailRow('المدفوع', '${(sale['paid_amount'] as num).toStringAsFixed(2)} ر.س'),
-              _buildDetailRow('الباقي', '${(sale['change_amount'] as num).toStringAsFixed(2)} ر.س'),
-              _buildDetailRow('الربح', '${(sale['profit_amount'] as num).toStringAsFixed(2)} ر.س', color: Colors.green),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sale Info
+                _buildDetailRow('التاريخ', DateTime.parse(sale['sale_date'] as String).toString().substring(0, 16)),
+                _buildDetailRow('الكاشير', sale['cashier_name'] as String),
+                _buildDetailRow('طريقة الدفع', sale['payment_method'] == 'cash' ? 'نقدي' : 'بطاقة'),
+                const Divider(),
+                
+                // Items
+                const Text('المنتجات:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...saleItems.map((item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${item['quantity']}x منتج #${item['product_id']}'),
+                      Text('${(item['total_price'] as num).toStringAsFixed(2)} ر.س'),
+                    ],
+                  ),
+                )),
+                const Divider(),
+                
+                // Totals
+                _buildDetailRow('المجموع الفرعي', '${subtotal.toStringAsFixed(2)} ر.س'),
+                if (discountAmount > 0) ...[
+                  _buildDetailRow(
+                    'الخصم ${discountType == 'percentage' ? '(نسبة %)' : '(مبلغ ثابت)'}',
+                    '-${discountAmount.toStringAsFixed(2)} ر.س',
+                    color: Colors.orange,
+                    isBold: true,
+                  ),
+                  const Divider(),
+                ],
+                _buildDetailRow('الإجمالي', '${(sale['total_amount'] as num).toStringAsFixed(2)} ر.س', isBold: true),
+                _buildDetailRow('المدفوع', '${(sale['paid_amount'] as num).toStringAsFixed(2)} ر.س'),
+                if (sale['payment_method'] == 'cash')
+                  _buildDetailRow('الباقي', '${(sale['change_amount'] as num).toStringAsFixed(2)} ر.س'),
+                const Divider(),
+                _buildDetailRow('الربح', '${(sale['profit_amount'] as num).toStringAsFixed(2)} ر.س', color: Colors.green, isBold: true),
+              ],
+            ),
           ),
         ),
         actions: [
+          OutlinedButton.icon(
+            onPressed: () {
+              // Re-print receipt logic here
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('سيتم إعادة طباعة الفاتورة')),
+              );
+            },
+            icon: const Icon(Icons.print),
+            label: const Text('إعادة طباعة'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('إغلاق'),
@@ -2242,7 +2317,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                   sum + (item.product.price * 0.6 * item.quantity)); // Assuming 40% markup
                 final profitAmount = _finalTotal - totalCost;
                 
-                // Prepare sale data
+                // Prepare sale data with discount information
                 final saleData = {
                   'total_amount': _finalTotal,
                   'total_cost': totalCost,
@@ -2251,6 +2326,9 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                   'change_amount': changeAmount,
                   'payment_method': paymentMethod,
                   'cashier_name': AuthService.currentUser ?? 'admin',
+                  'discount_amount': _totalDiscount,
+                  'discount_type': _discountType,
+                  'subtotal': _subtotal,
                 };
                 
                 // Prepare sale items (Note: we need product IDs from database)
