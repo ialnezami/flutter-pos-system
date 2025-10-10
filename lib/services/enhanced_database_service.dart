@@ -118,7 +118,7 @@ class EnhancedDatabaseService {
     String path = await _getDatabasePath();
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createTables,
       onUpgrade: _upgradeTables,
     );
@@ -159,6 +159,9 @@ class EnhancedDatabaseService {
         payment_method TEXT NOT NULL,
         cashier_name TEXT NOT NULL,
         customer_name TEXT,
+        discount_amount REAL DEFAULT 0,
+        discount_type TEXT,
+        subtotal REAL,
         sale_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
     ''');
@@ -224,16 +227,59 @@ class EnhancedDatabaseService {
   Future<void> _upgradeTables(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       // Add new columns to existing products table
-      await db.execute('ALTER TABLE products ADD COLUMN tags TEXT');
-      await db.execute('ALTER TABLE products ADD COLUMN buy_price REAL DEFAULT 0');
-      await db.execute('ALTER TABLE products ADD COLUMN sell_price REAL DEFAULT 0');
-      await db.execute('ALTER TABLE products ADD COLUMN material TEXT DEFAULT "قطن"');
-      await db.execute('ALTER TABLE products ADD COLUMN min_stock_level INTEGER DEFAULT 5');
-      await db.execute('ALTER TABLE products ADD COLUMN description TEXT');
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN tags TEXT');
+      } catch (e) {
+        print('Column tags may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN buy_price REAL DEFAULT 0');
+      } catch (e) {
+        print('Column buy_price may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN sell_price REAL DEFAULT 0');
+      } catch (e) {
+        print('Column sell_price may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN material TEXT DEFAULT "قطن"');
+      } catch (e) {
+        print('Column material may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN min_stock_level INTEGER DEFAULT 5');
+      } catch (e) {
+        print('Column min_stock_level may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE products ADD COLUMN description TEXT');
+      } catch (e) {
+        print('Column description may already exist: $e');
+      }
       
       // Update existing price column to sell_price
-      await db.execute('UPDATE products SET sell_price = price WHERE sell_price = 0');
-      await db.execute('UPDATE products SET buy_price = price * 0.6 WHERE buy_price = 0');
+      await db.execute('UPDATE products SET sell_price = price WHERE sell_price = 0 OR sell_price IS NULL');
+      await db.execute('UPDATE products SET buy_price = price * 0.6 WHERE buy_price = 0 OR buy_price IS NULL');
+    }
+    
+    if (oldVersion < 3) {
+      // Add discount columns to sales table
+      try {
+        await db.execute('ALTER TABLE sales ADD COLUMN discount_amount REAL DEFAULT 0');
+      } catch (e) {
+        print('Column discount_amount may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE sales ADD COLUMN discount_type TEXT');
+      } catch (e) {
+        print('Column discount_type may already exist: $e');
+      }
+      try {
+        await db.execute('ALTER TABLE sales ADD COLUMN subtotal REAL');
+      } catch (e) {
+        print('Column subtotal may already exist: $e');
+      }
     }
   }
 

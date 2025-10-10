@@ -112,8 +112,22 @@ class WebStorageService {
     final saleId = _nextSaleId++;
     sale['id'] = saleId;
     sale['sale_date'] = DateTime.now().toIso8601String();
+    
+    // Ensure all fields are present
+    sale.putIfAbsent('discount_amount', () => 0.0);
+    sale.putIfAbsent('discount_type', () => 'percentage');
+    sale.putIfAbsent('subtotal', () => sale['total_amount']);
+    
     _sales.add(sale);
-    print('✅ Sale saved (in-memory): ID $saleId, Total: ${sale['total_amount']} ر.س');
+    
+    print('✅ Sale saved (in-memory):');
+    print('   ID: $saleId');
+    print('   Total: ${sale['total_amount']} ر.س');
+    print('   Discount: ${sale['discount_amount']} ر.س');
+    print('   Subtotal: ${sale['subtotal']} ر.س');
+    print('   Payment: ${sale['payment_method']}');
+    print('   Cashier: ${sale['cashier_name']}');
+    
     return saleId;
   }
 
