@@ -55,6 +55,10 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   bool _isLoadingProducts = true;
   final EnhancedDatabaseService _dbService = EnhancedDatabaseService();
   
+  // Search & Barcode
+  final TextEditingController _searchController = TextEditingController();
+  List<ClothingProduct> _filteredProducts = [];
+  
   // Date filtering for reports
   String _dateFilter = 'all'; // 'all', 'today', 'month', 'quarter'
   DateTime? _customStartDate;
@@ -64,6 +68,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   void initState() {
     super.initState();
     _loadProducts();
+    _searchController.addListener(_onSearchChanged);
     if (kIsWeb) {
       // Show web mode notification
       Future.delayed(const Duration(seconds: 1), () {
@@ -77,6 +82,77 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
           );
         }
       });
+    }
+  }
+  
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+  
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredProducts = _products;
+      } else {
+        _filteredProducts = _products.where((product) {
+          return product.name.toLowerCase().contains(query) ||
+                 product.category.toLowerCase().contains(query) ||
+                 product.color.toLowerCase().contains(query);
+        }).toList();
+      }
+    });
+  }
+  
+  Future<void> _searchAndAddByBarcode(String barcode) async {
+    if (barcode.trim().isEmpty) return;
+    
+    try {
+      // Search all products in database by barcode
+      final allProducts = await _getAllProducts();
+      final found = allProducts.where((p) => 
+        (p['barcode'] as String?) == barcode.trim()
+      ).toList();
+      
+      if (found.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('لم يتم العثور على منتج بالباركود: $barcode'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      // Found product - add to cart
+      final productData = found.first;
+      final product = ClothingProduct(
+        name: productData['name'] as String,
+        category: productData['category'] as String,
+        price: (productData['sell_price'] as num).toDouble(),
+        size: productData['size'] as String,
+        color: productData['color'] as String,
+      );
+      
+      _addToCart(product);
+      _searchController.clear();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ تمت إضافة ${product.name} عبر الباركود'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في البحث: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
   
@@ -185,6 +261,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
             color: data['color'] as String,
           );
         }).toList();
+        _filteredProducts = _products; // Initialize filtered list
         _isLoadingProducts = false;
       });
       } catch (e) {
@@ -480,33 +557,76 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                 ),
                 const SizedBox(height: 16),
                 
-                // Search Bar
+                // Search Bar with Barcode Support
                 TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
-                    labelText: 'البحث عن المنتجات',
-                    hintText: 'ادخل اسم المنتج، الباركود، أو الفئة',
+                    labelText: 'البحث عن المنتجات أو الباركود',
+                    hintText: 'ادخل الباركود واضغط Enter للإضافة المباشرة',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_searchController.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _filteredProducts = _products);
+                            },
+                            tooltip: 'مسح',
+                          ),
+                        IconButton(
                       icon: const Icon(Icons.qr_code_scanner),
                       onPressed: _showBarcodeScanner,
                       tooltip: 'مسح الباركود',
+                        ),
+                      ],
                     ),
                     border: const OutlineInputBorder(),
+                    helperText: 'ابحث بالاسم أو الفئة، أو اكتب الباركود واضغط Enter',
+                    helperMaxLines: 2,
                   ),
+                  onSubmitted: (value) {
+                    // When Enter pressed, try to add by barcode
+                    if (value.trim().isNotEmpty) {
+                      _searchAndAddByBarcode(value.trim());
+                    }
+                  },
+                  textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 16),
                 
-                // Products Grid
+                // Products Grid (Filtered)
                 Expanded(
-                  child: GridView.builder(
+                  child: _filteredProducts.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off, size: 80, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'لا توجد نتائج',
+                                style: TextStyle(fontSize: 18, color: Colors.grey),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'جرب البحث بكلمات مختلفة',
+                                style: TextStyle(color: Colors.grey[500]),
+                              ),
+                            ],
+                          ),
+                        )
+                      : GridView.builder(
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                       childAspectRatio: 0.85,
                     ),
-                    itemCount: _products.length,
-                    itemBuilder: (context, index) => _buildProductCard(_products[index]),
+                          itemCount: _filteredProducts.length,
+                          itemBuilder: (context, index) => _buildProductCard(_filteredProducts[index]),
                   ),
                 ),
               ],
@@ -1142,13 +1262,13 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                         constraints: const BoxConstraints(),
                 ),
                       const SizedBox(width: 4),
-                      IconButton(
+                IconButton(
                         onPressed: () => _showDeleteProductDialog(productId),
                         icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                        tooltip: 'حذف',
+                  tooltip: 'حذف',
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                      ),
+                ),
               ],
             ),
           ],
