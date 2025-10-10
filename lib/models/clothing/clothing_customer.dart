@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:possystem/models/clothing/clothing_product.dart';
+import 'package:possystem/models/clothing/collection.dart';
 
 enum LoyaltyTier {
   bronze('Bronze', 0, 499),

@@ -236,8 +236,9 @@ class ClothingProduct extends Product {
 
   @override
   Map<String, dynamic> toJson() {
-    final json = super.toJson();
-    json.addAll({
+    return {
+      'id': id,
+      'name': name,
       'brand': brand,
       'season': season,
       'collection': collection,
@@ -248,8 +249,7 @@ class ClothingProduct extends Product {
       'tags': tags,
       'attributes': attributes,
       'variants': variants.map((key, value) => MapEntry(key, value.toJson())),
-    });
-    return json;
+    };
   }
 
   @override
