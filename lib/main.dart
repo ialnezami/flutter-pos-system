@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/enhanced_database_service.dart';
 
 void main() {
   runApp(const WorkingPOSApp());
@@ -16,7 +17,7 @@ class AuthService {
     if (username == 'admin' && password == 'admin') {
       _isLoggedIn = true;
       _currentUser = username;
-      return true;
+          return true;
     }
     return false;
   }
@@ -245,17 +246,45 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   double _cartDiscount = 0.0; // Cart-wide discount
   String _discountType = 'percentage'; // 'percentage' or 'fixed'
   
-  // Sample products
-  final List<ClothingProduct> _products = [
-    ClothingProduct(name: 'قميص أزرق', category: 'قمصان', price: 120.0, size: 'متوسط', color: 'أزرق'),
-    ClothingProduct(name: 'بنطلون أسود', category: 'بناطيل', price: 280.0, size: '34', color: 'أسود'),
-    ClothingProduct(name: 'فستان أحمر', category: 'فساتين', price: 450.0, size: 'صغير', color: 'أحمر'),
-    ClothingProduct(name: 'حذاء بني', category: 'أحذية', price: 350.0, size: '42', color: 'بني'),
-    ClothingProduct(name: 'حقيبة يد', category: 'حقائب', price: 380.0, size: 'متوسط', color: 'أسود'),
-    ClothingProduct(name: 'ساعة ذهبية', category: 'ساعات', price: 850.0, size: 'قياس واحد', color: 'ذهبي'),
-    ClothingProduct(name: 'نظارة شمس', category: 'نظارات', price: 250.0, size: 'قياس واحد', color: 'أسود'),
-    ClothingProduct(name: 'حزام جلد', category: 'أحزمة', price: 180.0, size: '85 سم', color: 'بني'),
-  ];
+  // Products loaded from database
+  List<ClothingProduct> _products = [];
+  bool _isLoadingProducts = true;
+  final EnhancedDatabaseService _dbService = EnhancedDatabaseService();
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+  
+  Future<void> _loadProducts() async {
+    setState(() => _isLoadingProducts = true);
+    
+    try {
+      // Load products from database
+      final productsData = await _dbService.getAllProducts();
+      
+      setState(() {
+        _products = productsData.map((data) {
+          return ClothingProduct(
+            name: data['name'] as String,
+            category: data['category'] as String,
+            price: (data['sell_price'] as num).toDouble(),
+            size: data['size'] as String,
+            color: data['color'] as String,
+          );
+        }).toList();
+        _isLoadingProducts = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingProducts = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في تحميل المنتجات: $e')),
+        );
+      }
+    }
+  }
   
   void _addToCart(ClothingProduct product) {
     setState(() {
@@ -283,6 +312,24 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingProducts) {
+      return const Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('جاري تحميل المنتجات...', style: TextStyle(fontSize: 16)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -498,136 +545,292 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   }
 
   Widget _buildCashierPage() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Cashier Header
-          Card(
-            color: Colors.green[50],
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Icon(Icons.point_of_sale, size: 48, color: Colors.green[700]),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'واجهة الكاشير',
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green[700],
-                          ),
-                        ),
-                        const Text('ابحث عن المنتجات وأضفها للسلة'),
-                      ],
+    return Row(
+      children: [
+        // Products Panel (Left Side)
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  'المنتجات المتاحة',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Search Bar
+                TextField(
+                  decoration: InputDecoration(
+                    labelText: 'البحث عن المنتجات',
+                    hintText: 'ادخل اسم المنتج، الباركود، أو الفئة',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.qr_code_scanner),
+                      onPressed: _showBarcodeScanner,
+                      tooltip: 'مسح الباركود',
                     ),
+                    border: const OutlineInputBorder(),
                   ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Search Bar
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      labelText: 'البحث عن المنتجات',
-                      hintText: 'ادخل اسم المنتج، الباركود، أو الفئة',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.qr_code_scanner),
-                        onPressed: _showBarcodeScanner,
-                      ),
-                      border: const OutlineInputBorder(),
+                ),
+                const SizedBox(height: 16),
+                
+                // Products Grid
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.85,
                     ),
+                    itemCount: _products.length,
+                    itemBuilder: (context, index) => _buildProductCard(_products[index]),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _showQuickAddDialog,
-                          icon: const Icon(Icons.add_circle),
-                          label: const Text('إضافة سريعة'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // Cart Panel (Right Side)
+        Container(
+          width: 400,
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            border: Border(
+              left: BorderSide(color: Colors.grey[300]!),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Cart Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.blue[700],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.shopping_cart, color: Colors.white, size: 28),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'سلة التسوق',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
+                          Text(
+                            '${_cartItems.length} منتجات',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _clearCart,
-                          icon: const Icon(Icons.clear_all),
-                          label: const Text('مسح السلة'),
-                        ),
+                    ),
+                    if (_cartItems.isNotEmpty)
+                      IconButton(
+                        onPressed: _clearCart,
+                        icon: const Icon(Icons.delete_outline, color: Colors.white),
+                        tooltip: 'مسح السلة',
                       ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Sample Products Grid
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              children: _products.map((product) => 
-                _buildProductCard(product)
-              ).toList(),
-            ),
-          ),
-
-          // Cart Summary
-          Card(
-            color: Colors.blue[50],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.shopping_cart, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Text('السلة: ${_cartItems.length} منتجات'),
-                      const Spacer(),
-                      if (_cartItems.isNotEmpty) ...[
-                        OutlinedButton.icon(
-                          onPressed: _showDiscountDialog,
-                          icon: const Icon(Icons.discount),
-                          label: const Text('خصم'),
-                          style: OutlinedButton.styleFrom(foregroundColor: Colors.orange),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      ElevatedButton.icon(
-                        onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
-                        icon: const Icon(Icons.payment),
-                        label: const Text('الدفع'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                        ),
+              
+              // Cart Items List
+              Expanded(
+                child: _cartItems.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[400]),
+                          const SizedBox(height: 16),
+                          Text(
+                            'السلة فارغة',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'اضغط على المنتجات لإضافتها',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[500],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  if (_cartItems.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    const Divider(),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _cartItems.length,
+                      itemBuilder: (context, index) {
+                        final item = _cartItems[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 2,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.product.name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${item.product.size} • ${item.product.color}',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _cartItems.removeAt(index);
+                                          if (_cartItems.isEmpty) _cartDiscount = 0.0;
+                                        });
+                                      },
+                                      icon: const Icon(Icons.close, size: 20),
+                                      color: Colors.red,
+                                      tooltip: 'حذف',
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Quantity Controls
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                if (item.quantity > 1) {
+                                                  item.quantity--;
+                                                }
+                                              });
+                                            },
+                                            icon: const Icon(Icons.remove, size: 18),
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                            child: Text(
+                                              '${item.quantity}',
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            onPressed: () {
+                                              setState(() {
+                                                item.quantity++;
+                                              });
+                                            },
+                                            icon: const Icon(Icons.add, size: 18),
+                                            padding: const EdgeInsets.all(4),
+                                            constraints: const BoxConstraints(),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    
+                                    // Price
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          '${item.product.price.toStringAsFixed(2)} ر.س',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                        Text(
+                                          '${item.subtotal.toStringAsFixed(2)} ر.س',
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+              ),
+              
+              // Cart Summary & Actions
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Subtotal
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -635,31 +838,85 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                         Text('${_subtotal.toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 16)),
                       ],
                     ),
+                    
+                    // Discount
                     if (_totalDiscount > 0) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('الخصم:', style: TextStyle(fontSize: 16, color: Colors.green)),
-                          Text('-${_totalDiscount.toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold)),
+                          Text(
+                            '-${_totalDiscount.toStringAsFixed(2)} ر.س',
+                            style: const TextStyle(fontSize: 16, color: Colors.green, fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 8),
+                    
+                    const Divider(height: 24),
+                    
+                    // Total
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('الإجمالي:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('${_finalTotal.toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue)),
+                        const Text(
+                          'الإجمالي:',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '${_finalTotal.toStringAsFixed(2)} ر.س',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
                       ],
                     ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Action Buttons
+                    if (_cartItems.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _showDiscountDialog,
+                              icon: const Icon(Icons.discount),
+                              label: const Text('خصم'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.orange,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _cartItems.isEmpty ? null : _showPaymentDialog,
+                        icon: const Icon(Icons.payment, size: 24),
+                        label: const Text('إتمام الدفع', style: TextStyle(fontSize: 18)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                        ),
+                      ),
+                    ),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -1412,7 +1669,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   final discountValue = double.tryParse(discountController.text) ?? 0.0;
                   if (tempDiscountType == 'percentage') {
                     _cartDiscount = (_subtotal * discountValue / 100).clamp(0, _subtotal);
-                  } else {
+      } else {
                     _cartDiscount = discountValue.clamp(0, _subtotal);
                   }
                 });
