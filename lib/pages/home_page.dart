@@ -1428,14 +1428,11 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
         actions: [
           OutlinedButton.icon(
             onPressed: () {
-              // Re-print receipt logic here
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('سيتم إعادة طباعة الفاتورة')),
-              );
+              _showPrintOptions(sale['id'] as int);
             },
             icon: const Icon(Icons.print),
-            label: const Text('إعادة طباعة'),
+            label: const Text('طباعة/حفظ'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -2356,18 +2353,26 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
         ),
         actions: [
           OutlinedButton.icon(
-            onPressed: () async {
-              // This will be called BEFORE saving the sale
-              // We need to save first, then print
+            onPressed: () {
+              // Print receipt to console (simulates printer)
+              print('\n');
+              print('=' * 50);
+              print('PRINTING RECEIPT TO CONSOLE (SIMULATED PRINTER)');
+              print('=' * 50);
+              print(receipt);
+              print('=' * 50);
+              print('\n');
+              
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('سيتم الطباعة بعد حفظ البيع...'),
-                  duration: Duration(seconds: 1),
+                  content: Text('✓ تم إرسال الفاتورة للطباعة (راجع Console)'),
+                  backgroundColor: Colors.blue,
+                  duration: Duration(seconds: 3),
                 ),
               );
             },
             icon: const Icon(Icons.print),
-            label: const Text('طباعة'),
+            label: const Text('طباعة الآن'),
           ),
           ElevatedButton.icon(
             onPressed: () async {
@@ -2456,26 +2461,86 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.print, color: Colors.blue),
+            Icon(Icons.receipt_long, color: Colors.blue),
             SizedBox(width: 8),
-            Text('خيارات الطباعة'),
+            Text('خيارات الفاتورة'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // View Receipt
+            ListTile(
+              leading: const Icon(Icons.visibility, color: Colors.purple),
+              title: const Text('عرض الفاتورة'),
+              subtitle: const Text('معاينة الفاتورة المحفوظة'),
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  final receiptText = await _dbService.generateReceiptText(saleId);
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: Row(
+                        children: [
+                          const Icon(Icons.receipt_long, color: Colors.green),
+                          const SizedBox(width: 8),
+                          Text('فاتورة رقم #$saleId'),
+                        ],
+                      ),
+                      content: Container(
+                        width: 400,
+                        height: 550,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SingleChildScrollView(
+                          child: SelectableText(
+                            receiptText,
+                            style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('إغلاق'),
+                        ),
+                      ],
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('خطأ: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+            const Divider(),
+            // Print Receipt
             ListTile(
               leading: const Icon(Icons.print, color: Colors.blue),
               title: const Text('طباعة الفاتورة'),
-              subtitle: const Text('إرسال إلى الطابعة'),
+              subtitle: const Text('إرسال إلى الطابعة (Console)'),
               onTap: () async {
                 Navigator.pop(context);
                 try {
                   await _dbService.printReceipt(saleId);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('تم إرسال الفاتورة للطباعة ✓'),
+                      content: Text('✓ تم إرسال الفاتورة للطباعة\nتحقق من Console للمعاينة'),
                       backgroundColor: Colors.green,
+                      duration: Duration(seconds: 4),
                     ),
                   );
                 } catch (e) {
@@ -2489,21 +2554,22 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
               },
             ),
             const Divider(),
+            // Save to File
             ListTile(
               leading: const Icon(Icons.save, color: Colors.green),
-              title: const Text('حفظ كملف'),
-              subtitle: const Text('حفظ الفاتورة كملف نصي'),
+              title: const Text('حفظ كملف نصي'),
+              subtitle: const Text('حفظ الفاتورة في مجلد receipts/'),
               onTap: () async {
                 Navigator.pop(context);
                 try {
                   final file = await _dbService.saveReceiptToFile(saleId);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('تم حفظ الفاتورة\n${file.path}'),
+                      content: Text('✓ تم حفظ الفاتورة\n${file.path}'),
                       backgroundColor: Colors.green,
                       duration: const Duration(seconds: 5),
                       action: SnackBarAction(
-                        label: 'موقع الملف',
+                        label: 'عرض المسار',
                         textColor: Colors.white,
                         onPressed: () => _showFileLocation(file.path),
                       ),
@@ -2513,6 +2579,45 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('خطأ في الحفظ: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+            ),
+            const Divider(),
+            // Print AND Save
+            ListTile(
+              leading: const Icon(Icons.library_add_check, color: Colors.orange),
+              title: const Text('طباعة وحفظ معاً'),
+              subtitle: const Text('إرسال للطباعة + حفظ كملف'),
+              onTap: () async {
+                Navigator.pop(context);
+                try {
+                  // Print first
+                  await _dbService.printReceipt(saleId);
+                  // Then save
+                  final file = await _dbService.saveReceiptToFile(saleId);
+                  
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '✓ تم طباعة وحفظ الفاتورة بنجاح!\n'
+                        'الملف: ${file.path.split('/').last}',
+                      ),
+                      backgroundColor: Colors.green,
+                      duration: const Duration(seconds: 5),
+                      action: SnackBarAction(
+                        label: 'عرض المسار',
+                        textColor: Colors.white,
+                        onPressed: () => _showFileLocation(file.path),
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('خطأ: $e'),
                       backgroundColor: Colors.red,
                     ),
                   );
