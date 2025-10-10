@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'pages/home_page.dart';
+import 'pages/login_page.dart';
 
 void main() {
-  runApp(const WorkingPOSApp());
+  runApp(const POSApp());
 }
 
-class WorkingPOSApp extends StatelessWidget {
-  const WorkingPOSApp({super.key});
+class POSApp extends StatelessWidget {
+  const POSApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class WorkingPOSApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const WorkingHomePage(),
+      home: const LoginPage(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -1,29 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../services/enhanced_database_service.dart';
+import '../services/web_storage_service.dart';
+import '../services/auth_service.dart';
 import '../helpers/csv_helper.dart';
 import '../helpers/date_filter_helper.dart';
-
-class AuthService {
-  static bool _isLoggedIn = false;
-  static String? _currentUser;
-  
-  static bool get isLoggedIn => _isLoggedIn;
-  static String? get currentUser => _currentUser;
-  
-  static bool login(String username, String password) {
-    if (username == 'admin' && password == 'admin') {
-      _isLoggedIn = true;
-      _currentUser = username;
-      return true;
-    }
-    return false;
-  }
-  
-  static void logout() {
-    _isLoggedIn = false;
-    _currentUser = null;
-  }
-}
 
 class WorkingHomePage extends StatefulWidget {
   const WorkingHomePage({super.key});
@@ -83,14 +64,116 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   void initState() {
     super.initState();
     _loadProducts();
+    if (kIsWeb) {
+      // Show web mode notification
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🌐 Web Mode: البيانات مؤقتة (in-memory)\nللحفظ الدائم، استخدم macOS/Windows'),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      });
+    }
+  }
+  
+  // Helper: Get products based on platform
+  Future<List<Map<String, dynamic>>> _getAllProducts() async {
+    return kIsWeb 
+        ? await WebStorageService.getAllProducts()
+        : await _dbService.getAllProducts();
+  }
+  
+  Future<Map<String, dynamic>?> _getProductById(int id) async {
+    return kIsWeb
+        ? await WebStorageService.getProductById(id)
+        : await _dbService.getProductById(id);
+  }
+  
+  Future<int> _insertProduct(Map<String, dynamic> product) async {
+    return kIsWeb
+        ? await WebStorageService.insertProduct(product)
+        : await _dbService.insertProduct(product);
+  }
+  
+  Future<void> _updateProduct(int id, Map<String, dynamic> product) async {
+    return kIsWeb
+        ? await WebStorageService.updateProduct(id, product)
+        : await _dbService.updateProduct(id, product);
+  }
+  
+  Future<void> _deleteProduct(int id) async {
+    return kIsWeb
+        ? await WebStorageService.deleteProduct(id)
+        : await _dbService.deleteProduct(id);
+  }
+  
+  Future<List<Map<String, dynamic>>> _getCategoriesWithCounts() async {
+    return kIsWeb
+        ? await WebStorageService.getCategoriesWithCounts()
+        : await _dbService.getCategoriesWithCounts();
+  }
+  
+  Future<void> _updateCategory(String oldName, String newName) async {
+    return kIsWeb
+        ? await WebStorageService.updateCategory(oldName, newName)
+        : await _dbService.updateCategory(oldName, newName);
+  }
+  
+  Future<void> _deleteCategoryService(String name) async {
+    return kIsWeb
+        ? await WebStorageService.deleteCategory(name)
+        : await _dbService.deleteCategory(name);
+  }
+  
+  // Sales helpers
+  Future<int> _insertSale(Map<String, dynamic> sale, List<Map<String, dynamic>> items) async {
+    return kIsWeb
+        ? await WebStorageService.insertSale(sale, items)
+        : await _dbService.insertSale(sale, items);
+  }
+  
+  Future<List<Map<String, dynamic>>> _getAllSales() async {
+    return kIsWeb
+        ? await WebStorageService.getAllSales()
+        : await _dbService.getAllSales();
+  }
+  
+  Future<List<Map<String, dynamic>>> _getSaleItems(int saleId) async {
+    return kIsWeb
+        ? await WebStorageService.getSaleItems(saleId)
+        : await _dbService.getSaleItems(saleId);
+  }
+  
+  Future<String> _generateReceiptText(int saleId) async {
+    return kIsWeb
+        ? await WebStorageService.generateReceiptText(saleId)
+        : await _dbService.generateReceiptText(saleId);
+  }
+  
+  Future<void> _printReceipt(int saleId) async {
+    return kIsWeb
+        ? await WebStorageService.printReceipt(saleId)
+        : await _dbService.printReceipt(saleId);
+  }
+  
+  Future<dynamic> _saveReceiptToFile(int saleId) async {
+    return kIsWeb
+        ? await WebStorageService.saveReceiptToFile(saleId)
+        : await _dbService.saveReceiptToFile(saleId);
   }
   
   Future<void> _loadProducts() async {
     setState(() => _isLoadingProducts = true);
     
     try {
-      // Load products from database
-      final productsData = await _dbService.getAllProducts();
+      // Load products - use web storage on web, database on native
+      final productsData = kIsWeb 
+          ? await WebStorageService.getAllProducts()
+          : await _dbService.getAllProducts();
       
       setState(() {
         _products = productsData.map((data) {
@@ -108,7 +191,12 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
       setState(() => _isLoadingProducts = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل المنتجات: $e')),
+          SnackBar(
+            content: Text(kIsWeb 
+                ? 'تم تحميل ${_products.length} منتج (Web Mode - In Memory)'
+                : 'خطأ في تحميل المنتجات: $e'),
+            backgroundColor: kIsWeb ? Colors.blue : Colors.red,
+          ),
         );
       }
     }
@@ -920,23 +1008,82 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
           ),
           const SizedBox(height: 24),
 
-          // Sample Product List
+          // Product List from Database
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
           Text(
-            'المنتجات الحالية (عينة)',
+                'المنتجات الحالية',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
             ),
+              ),
+              TextButton.icon(
+                onPressed: () => setState(() {}),
+                icon: const Icon(Icons.refresh),
+                label: const Text('تحديث'),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: ListView(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _getAllProducts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildProductListItem('قميص قطني أبيض', 'قمصان', 80.0, 120.0, 25, 'أبيض'),
-                _buildProductListItem('بنطلون جينز أزرق', 'بناطيل', 180.0, 280.0, 20, 'أزرق'),
-                _buildProductListItem('فستان صيفي أصفر', 'فساتين', 180.0, 280.0, 8, 'أصفر'),
-                _buildProductListItem('حذاء رياضي أبيض', 'أحذية', 220.0, 350.0, 15, 'أبيض'),
-                _buildProductListItem('حقيبة يد جلد', 'حقائب', 250.0, 380.0, 12, 'أسود'),
-              ],
+                        const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                        const SizedBox(height: 16),
+                        Text('خطأ في تحميل المنتجات: ${snapshot.error}'),
+                      ],
+                    ),
+                  );
+                }
+                
+                final products = snapshot.data ?? [];
+                
+                if (products.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        const Text('لا توجد منتجات بعد'),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: _showAddProductDialog,
+                          icon: const Icon(Icons.add),
+                          label: const Text('إضافة منتج'),
+          ),
+        ],
+      ),
+    );
+  }
+
+                return ListView.builder(
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return _buildProductListItem(
+                      product['name'] as String,
+                      product['category'] as String? ?? 'غير محدد',
+                      (product['buy_price'] as num).toDouble(),
+                      (product['sell_price'] as num).toDouble(),
+                      product['stock_quantity'] as int,
+                      product['color'] as String? ?? 'غير محدد',
+                      productId: product['id'] as int,
+                    );
+                  },
+                );
+              },
             ),
           ),
         ],
@@ -944,7 +1091,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
     );
   }
 
-  Widget _buildProductListItem(String name, String category, double buyPrice, double sellPrice, int stock, String color) {
+  Widget _buildProductListItem(String name, String category, double buyPrice, double sellPrice, int stock, String color, {int? productId}) {
     final profit = sellPrice - buyPrice;
     final margin = (profit / sellPrice * 100);
     
@@ -972,7 +1119,8 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
             ),
           ],
         ),
-        trailing: Column(
+        trailing: productId != null
+            ? Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -987,18 +1135,30 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  onPressed: () => _editProduct(name),
-                  icon: const Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => _editProduct(productId),
+                        icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
                   tooltip: 'تعديل',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                 ),
-                IconButton(
-                  onPressed: () => _deleteProduct(name),
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  tooltip: 'حذف',
-                ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        onPressed: () => _showDeleteProductDialog(productId),
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                        tooltip: 'حذف',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
               ],
             ),
           ],
+              )
+            : Text(
+                'مخزون: $stock',
+                style: TextStyle(
+                  color: stock < 10 ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.bold,
+                ),
         ),
       ),
     );
@@ -1289,7 +1449,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   }
   
   Future<List<Map<String, dynamic>>> _getFilteredSales() async {
-    final allSales = await _dbService.getAllSales();
+    final allSales = await _getAllSales();
     
     if (_dateFilter == 'all') {
       return allSales;
@@ -1361,7 +1521,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
   
   void _showSaleDetails(Map<String, dynamic> sale) async {
     // Load sale items
-    final saleItems = await _dbService.getSaleItems(sale['id'] as int);
+    final saleItems = await _getSaleItems(sale['id'] as int);
     final discountAmount = sale['discount_amount'] != null ? (sale['discount_amount'] as num).toDouble() : 0.0;
     final subtotal = sale['subtotal'] != null ? (sale['subtotal'] as num).toDouble() : (sale['total_amount'] as num).toDouble();
     final discountType = sale['discount_type'] as String?;
@@ -1760,12 +1920,12 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   'updated_date': DateTime.now().toIso8601String(),
                 };
                 
-                await _dbService.insertProduct(product);
+                await _insertProduct(product);
                 await _loadProducts(); // Reload products
                 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('تم إضافة "${nameController.text}" بنجاح ✓'),
+                    content: Text('✅ تم إضافة "${nameController.text}" بنجاح${kIsWeb ? ' (Web - مؤقت)' : ''}'),
                   backgroundColor: Colors.green,
                 ),
               );
@@ -1789,22 +1949,37 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
     );
   }
 
-  void _showProductList() {
+  void _showProductList() async {
+    final products = await _getAllProducts();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('قائمة المنتجات'),
-        content: SizedBox(
-          width: 600,
-          height: 400,
-          child: ListView(
+        title: const Row(
             children: [
-              _buildEditableProductItem('قميص قطني أبيض', 'قمصان', 80.0, 120.0, 25),
-              _buildEditableProductItem('بنطلون جينز أزرق', 'بناطيل', 180.0, 280.0, 20),
-              _buildEditableProductItem('فستان صيفي أصفر', 'فساتين', 180.0, 280.0, 8),
-              _buildEditableProductItem('حذاء رياضي أبيض', 'أحذية', 220.0, 350.0, 15),
-              _buildEditableProductItem('حقيبة يد جلد', 'حقائب', 250.0, 380.0, 12),
-            ],
+            Icon(Icons.inventory, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('قائمة المنتجات'),
+          ],
+        ),
+        content: SizedBox(
+          width: 650,
+          height: 500,
+          child: products.isEmpty
+              ? const Center(child: Text('لا توجد منتجات'))
+              : ListView.builder(
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return _buildEditableProductItem(
+                      product['name'] as String,
+                      product['category'] as String,
+                      (product['buy_price'] as num).toDouble(),
+                      (product['sell_price'] as num).toDouble(),
+                      product['stock_quantity'] as int,
+                      product['id'] as int,
+                    );
+                  },
           ),
         ),
         actions: [
@@ -1817,17 +1992,17 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
     );
   }
 
-  Widget _buildEditableProductItem(String name, String category, double buyPrice, double sellPrice, int stock) {
+  Widget _buildEditableProductItem(String name, String category, double buyPrice, double sellPrice, int stock, int productId) {
     final profit = sellPrice - buyPrice;
     final margin = (profit / sellPrice * 100);
     
     return Card(
       child: ListTile(
-        title: Text(name),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('$category - مخزون: $stock'),
+            Text('$category - مخزون: $stock قطعة'),
             Text('شراء: ${buyPrice.toStringAsFixed(2)} | بيع: ${sellPrice.toStringAsFixed(2)} ر.س'),
             Text(
               'ربح: ${profit.toStringAsFixed(2)} ر.س (${margin.toStringAsFixed(1)}%)',
@@ -1839,12 +2014,20 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              onPressed: () => _editProduct(name),
-              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () {
+                Navigator.pop(context);
+                _editProduct(productId);
+              },
+              icon: const Icon(Icons.edit, color: Colors.blue, size: 22),
+              tooltip: 'تعديل',
             ),
             IconButton(
-              onPressed: () => _deleteProduct(name),
-              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                Navigator.pop(context);
+                _showDeleteProductDialog(productId);
+              },
+              icon: const Icon(Icons.delete, color: Colors.red, size: 22),
+              tooltip: 'حذف',
             ),
           ],
         ),
@@ -2410,7 +2593,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                 }).toList();
                 
                 // Save to database and get sale ID
-                final saleId = await _dbService.insertSale(saleData, saleItems);
+                final saleId = await _insertSale(saleData, saleItems);
                 
                 // Clear cart
                 setState(() {
@@ -2477,7 +2660,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
               onTap: () async {
                 Navigator.pop(context);
                 try {
-                  final receiptText = await _dbService.generateReceiptText(saleId);
+                  final receiptText = await _generateReceiptText(saleId);
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -2535,7 +2718,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
               onTap: () async {
                 Navigator.pop(context);
                 try {
-                  await _dbService.printReceipt(saleId);
+                  await _printReceipt(saleId);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('✓ تم إرسال الفاتورة للطباعة\nتحقق من Console للمعاينة'),
@@ -2562,7 +2745,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
               onTap: () async {
                 Navigator.pop(context);
                 try {
-                  final file = await _dbService.saveReceiptToFile(saleId);
+                  final file = await _saveReceiptToFile(saleId);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('✓ تم حفظ الفاتورة\n${file.path}'),
@@ -2595,9 +2778,9 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                 Navigator.pop(context);
                 try {
                   // Print first
-                  await _dbService.printReceipt(saleId);
+                  await _printReceipt(saleId);
                   // Then save
-                  final file = await _dbService.saveReceiptToFile(saleId);
+                  final file = await _saveReceiptToFile(saleId);
                   
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -2637,7 +2820,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
   }
 
   void _showCategoryManager() async {
-    final categories = await _dbService.getCategoriesWithCounts();
+    final categories = await _getCategoriesWithCounts();
     
     showDialog(
       context: context,
@@ -2864,7 +3047,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
               
               Navigator.pop(context);
               try {
-                await _dbService.updateCategory(oldName, newName);
+                await _updateCategory(oldName, newName);
                 await _loadProducts(); // Reload to update cashier page
                 
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -2918,7 +3101,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await _dbService.deleteCategory(categoryName);
+                await _deleteCategoryService(categoryName);
                 
               ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -2949,7 +3132,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
 
   void _editProduct(int productId) async {
     // Load product details
-    final product = await _dbService.getProductById(productId);
+    final product = await _getProductById(productId);
     if (product == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('المنتج غير موجود'), backgroundColor: Colors.red),
@@ -3170,7 +3353,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
                   'updated_date': DateTime.now().toIso8601String(),
                 };
                 
-                await _dbService.updateProduct(productId, updatedProduct);
+                await _updateProduct(productId, updatedProduct);
                 await _loadProducts(); // Reload products
                 
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -3199,9 +3382,9 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
     );
   }
 
-  void _deleteProduct(int productId) async {
+  void _showDeleteProductDialog(int productId) async {
     // Get product details first
-    final product = await _dbService.getProductById(productId);
+    final product = await _getProductById(productId);
     if (product == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('المنتج غير موجود'), backgroundColor: Colors.red),
@@ -3233,7 +3416,7 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await _dbService.deleteProduct(productId);
+                await _deleteProduct(productId);
                 await _loadProducts(); // Reload products
                 
                 ScaffoldMessenger.of(context).showSnackBar(
