@@ -19,4 +19,3 @@ class AuthService {
     _currentUser = null;
   }
 }
-

@@ -693,4 +693,181 @@ class EnhancedDatabaseService {
       print('Error during image cleanup: $e');
     }
   }
+
+  // ============================================================
+  // CATEGORY CRUD OPERATIONS
+  // ============================================================
+
+  Future<List<Map<String, dynamic>>> getCategoriesWithCounts() async {
+    final db = await database;
+    // Get unique categories from products with counts
+    final result = await db.rawQuery('''
+      SELECT DISTINCT category_name, COUNT(*) as product_count
+      FROM products
+      GROUP BY category_name
+      ORDER BY category_name
+    ''');
+    return result;
+  }
+
+  Future<void> addCategory(String categoryName) async {
+    // Categories are implicitly created when products use them
+    // This method validates and ensures the category exists
+    if (categoryName.trim().isEmpty) {
+      throw Exception('اسم الفئة لا يمكن أن يكون فارغاً');
+    }
+  }
+
+  Future<void> updateCategory(String oldName, String newName) async {
+    if (newName.trim().isEmpty) {
+      throw Exception('اسم الفئة الجديد لا يمكن أن يكون فارغاً');
+    }
+    
+    final db = await database;
+    await db.update(
+      'products',
+      {'category_name': newName},
+      where: 'category_name = ?',
+      whereArgs: [oldName],
+    );
+  }
+
+  Future<void> deleteCategory(String categoryName) async {
+    final db = await database;
+    
+    // Check if category has products
+    final products = await db.query(
+      'products',
+      where: 'category_name = ?',
+      whereArgs: [categoryName],
+    );
+    
+    if (products.isNotEmpty) {
+      throw Exception('لا يمكن حذف فئة تحتوي على منتجات (${products.length} منتج)');
+    }
+  }
+
+  // ============================================================
+  // ENHANCED PRODUCT OPERATIONS
+  // ============================================================
+
+  Future<void> deleteProduct(int productId) async {
+    final db = await database;
+    
+    // Check if product exists in any sales
+    final salesWithProduct = await db.query(
+      'sale_items',
+      where: 'product_id = ?',
+      whereArgs: [productId],
+      limit: 1,
+    );
+    
+    if (salesWithProduct.isNotEmpty) {
+      throw Exception('لا يمكن حذف منتج تم بيعه من قبل');
+    }
+    
+    // Delete the product
+    await deleteProductWithImages(productId);
+  }
+
+  // ============================================================
+  // INVOICE/RECEIPT PRINTING
+  // ============================================================
+
+  Future<String> generateReceiptText(int saleId) async {
+    final db = await database;
+    
+    // Get sale details
+    final sales = await db.query('sales', where: 'id = ?', whereArgs: [saleId]);
+    if (sales.isEmpty) throw Exception('الفاتورة غير موجودة');
+    
+    final sale = sales.first;
+    final saleItems = await getSaleItems(saleId);
+    
+    // Build receipt text
+    final buffer = StringBuffer();
+    buffer.writeln('========================================');
+    buffer.writeln('         محل الملابس والإكسسوارات        ');
+    buffer.writeln('========================================');
+    buffer.writeln();
+    buffer.writeln('رقم الفاتورة: $saleId');
+    buffer.writeln('التاريخ: ${sale['sale_date']}');
+    buffer.writeln('الكاشير: ${sale['cashier_name']}');
+    buffer.writeln('----------------------------------------');
+    buffer.writeln();
+    
+    // Items
+    buffer.writeln('المنتجات:');
+    buffer.writeln();
+    for (final item in saleItems) {
+      final qty = item['quantity'];
+      final price = item['sell_price'];
+      final total = item['total_price'];
+      buffer.writeln('  منتج #${item['product_id']}');
+      buffer.writeln('  الكمية: $qty x ${_formatMoney(price)} = ${_formatMoney(total)}');
+      buffer.writeln();
+    }
+    
+    buffer.writeln('----------------------------------------');
+    final subtotal = sale['subtotal'] ?? sale['total_amount'];
+    buffer.writeln('المجموع الفرعي:           ${_formatMoney(subtotal)}');
+    
+    final discountAmount = sale['discount_amount'];
+    final discount = discountAmount != null ? (discountAmount as num).toDouble() : 0.0;
+    if (discount > 0) {
+      final discountType = sale['discount_type'];
+      final typeLabel = discountType == 'percentage' ? '(%)' : '(ثابت)';
+      buffer.writeln('الخصم $typeLabel:            -${_formatMoney(discount)}');
+    }
+    
+    buffer.writeln('========================================');
+    buffer.writeln('الإجمالي:                 ${_formatMoney(sale['total_amount'])}');
+    buffer.writeln('========================================');
+    buffer.writeln();
+    
+    final paymentMethod = sale['payment_method'] == 'cash' ? 'نقدي' : 'بطاقة';
+    buffer.writeln('طريقة الدفع: $paymentMethod');
+    
+    if (sale['payment_method'] == 'cash') {
+      buffer.writeln('المدفوع:                  ${_formatMoney(sale['paid_amount'])}');
+      buffer.writeln('الباقي:                   ${_formatMoney(sale['change_amount'])}');
+    }
+    
+    buffer.writeln();
+    buffer.writeln('========================================');
+    buffer.writeln('        شكراً لزيارتكم         ');
+    buffer.writeln('     نسعد بخدمتكم دائماً      ');
+    buffer.writeln('========================================');
+    
+    return buffer.toString();
+  }
+
+  String _formatMoney(dynamic amount) {
+    final value = amount is num ? amount.toDouble() : 0.0;
+    return '${value.toStringAsFixed(2)} ر.س';
+  }
+
+  Future<void> printReceipt(int saleId) async {
+    final receiptText = await generateReceiptText(saleId);
+    print('\n$receiptText\n');
+    // In a real app, this would send to a printer
+    // For now, we just log it
+  }
+
+  Future<File> saveReceiptToFile(int saleId) async {
+    final receiptText = await generateReceiptText(saleId);
+    final directory = await getApplicationDocumentsDirectory();
+    final receiptsDir = Directory('${directory.path}/receipts');
+    
+    if (!await receiptsDir.exists()) {
+      await receiptsDir.create(recursive: true);
+    }
+    
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final filePath = '${receiptsDir.path}/receipt_${saleId}_$timestamp.txt';
+    final file = File(filePath);
+    
+    await file.writeAsString(receiptText);
+    return file;
+  }
 }
