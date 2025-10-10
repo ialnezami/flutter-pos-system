@@ -1528,34 +1528,57 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
 
   // Dialog Methods
   void _showAddProductDialog() {
+    final nameController = TextEditingController();
+    final categoryController = TextEditingController();
+    final tagsController = TextEditingController();
+    final buyPriceController = TextEditingController();
+    final sellPriceController = TextEditingController();
+    final sizeController = TextEditingController();
+    final colorController = TextEditingController();
+    final materialController = TextEditingController();
+    final stockController = TextEditingController(text: '10');
+    final barcodeController = TextEditingController();
+    final descriptionController = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إضافة منتج جديد'),
+        title: const Row(
+          children: [
+            Icon(Icons.add_box, color: Colors.green),
+            SizedBox(width: 8),
+            Text('إضافة منتج جديد'),
+          ],
+        ),
         content: SizedBox(
-          width: 400,
-          height: 500,
+          width: 500,
+          height: 600,
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
                     labelText: 'اسم المنتج *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.inventory),
                   ),
+                  autofocus: true,
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: categoryController,
+                  decoration: const InputDecoration(
                     labelText: 'الفئة *',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.category),
+                    hintText: 'مثال: قمصان، بناطيل، فساتين',
                   ),
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: tagsController,
+                  decoration: const InputDecoration(
                     labelText: 'العلامات (مفصولة بفاصلة)',
                     hintText: 'صيفي, كاجوال, قطن',
                     border: OutlineInputBorder(),
@@ -1567,6 +1590,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller: buyPriceController,
                         decoration: const InputDecoration(
                           labelText: 'سعر الشراء *',
                           border: OutlineInputBorder(),
@@ -1579,6 +1603,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextField(
+                        controller: sellPriceController,
                         decoration: const InputDecoration(
                           labelText: 'سعر البيع *',
                           border: OutlineInputBorder(),
@@ -1595,20 +1620,24 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller: sizeController,
                         decoration: const InputDecoration(
                           labelText: 'المقاس *',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.straighten),
+                          hintText: 'صغير، متوسط، كبير',
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextField(
+                        controller: colorController,
                         decoration: const InputDecoration(
                           labelText: 'اللون *',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.palette),
+                          hintText: 'أحمر، أزرق، أسود',
                         ),
                       ),
                     ),
@@ -1619,18 +1648,21 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   children: [
                     Expanded(
                       child: TextField(
+                        controller: materialController,
                         decoration: const InputDecoration(
                           labelText: 'المادة *',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.texture),
+                          hintText: 'قطن، جلد، حرير',
                         ),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: TextField(
+                        controller: stockController,
                         decoration: const InputDecoration(
-                          labelText: 'الكمية',
+                          labelText: 'الكمية *',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.inventory_2),
                           suffixText: 'قطعة',
@@ -1641,19 +1673,22 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: barcodeController,
+                  decoration: const InputDecoration(
                     labelText: 'الباركود',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.qr_code),
                   ),
                 ),
                 const SizedBox(height: 16),
-                const TextField(
-                  decoration: InputDecoration(
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
                     labelText: 'الوصف',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.description),
+                    hintText: 'وصف تفصيلي للمنتج',
                   ),
                   maxLines: 3,
                 ),
@@ -1667,20 +1702,90 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
+            onPressed: () async {
+              // Validate required fields
+              if (nameController.text.trim().isEmpty ||
+                  categoryController.text.trim().isEmpty ||
+                  buyPriceController.text.trim().isEmpty ||
+                  sellPriceController.text.trim().isEmpty ||
+                  sizeController.text.trim().isEmpty ||
+                  colorController.text.trim().isEmpty ||
+                  materialController.text.trim().isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('تم إضافة المنتج بنجاح'),
+                    content: Text('الرجاء ملء جميع الحقول المطلوبة (*)'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              final buyPrice = double.tryParse(buyPriceController.text);
+              final sellPrice = double.tryParse(sellPriceController.text);
+              final stock = int.tryParse(stockController.text) ?? 10;
+              
+              if (buyPrice == null || sellPrice == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('الأسعار يجب أن تكون أرقام صحيحة'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              if (sellPrice <= buyPrice) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('سعر البيع يجب أن يكون أكبر من سعر الشراء'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                return;
+              }
+              
+              Navigator.pop(context);
+              
+              try {
+                final product = {
+                  'name': nameController.text.trim(),
+                  'category': categoryController.text.trim(),
+                  'tags': tagsController.text.trim(),
+                  'buy_price': buyPrice,
+                  'sell_price': sellPrice,
+                  'size': sizeController.text.trim(),
+                  'color': colorController.text.trim(),
+                  'material': materialController.text.trim(),
+                  'stock_quantity': stock,
+                  'barcode': barcodeController.text.trim(),
+                  'description': descriptionController.text.trim(),
+                  'created_date': DateTime.now().toIso8601String(),
+                  'updated_date': DateTime.now().toIso8601String(),
+                };
+                
+                await _dbService.insertProduct(product);
+                await _loadProducts(); // Reload products
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم إضافة "${nameController.text}" بنجاح ✓'),
                   backgroundColor: Colors.green,
                 ),
               );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('خطأ في الإضافة: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
-            child: const Text('إضافة'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
             ),
+            child: const Text('إضافة'),
           ),
         ],
       ),
@@ -2426,30 +2531,98 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
     );
   }
 
-  void _showCategoryManager() {
+  void _showCategoryManager() async {
+    final categories = await _dbService.getCategoriesWithCounts();
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('إدارة الفئات'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.category, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('إدارة الفئات'),
+            ],
+          ),
         content: SizedBox(
-          width: 400,
-          height: 300,
+            width: 500,
+            height: 400,
           child: Column(
             children: [
-              const Text('الفئات المتاحة:'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('الفئات المتاحة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showAddCategoryDialog();
+                      },
+                      icon: const Icon(Icons.add),
+                      label: const Text('إضافة فئة'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               const SizedBox(height: 16),
               Expanded(
-                child: ListView(
+                  child: categories.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildCategoryItem('قمصان', 15),
-                    _buildCategoryItem('بناطيل', 15),
-                    _buildCategoryItem('فساتين', 12),
-                    _buildCategoryItem('أحذية', 18),
-                    _buildCategoryItem('جاكيتات', 10),
-                    _buildCategoryItem('ساعات', 8),
-                    _buildCategoryItem('حقائب', 12),
-                    _buildCategoryItem('مجوهرات', 10),
-                  ],
+                              Icon(Icons.category_outlined, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              const Text('لا توجد فئات بعد'),
+                              const SizedBox(height: 8),
+                              const Text('سيتم إنشاء الفئات تلقائياً عند إضافة منتجات'),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            final category = categories[index];
+                            final name = category['category_name'] as String;
+                            final count = category['product_count'] as int;
+                            
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: const Icon(Icons.category, color: Colors.orange),
+                                title: Text(
+                                  name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text('$count منتج'),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _showEditCategoryDialog(name);
+                                      },
+                                      tooltip: 'تعديل',
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        _deleteCategory(name);
+                                      },
+                                      tooltip: 'حذف',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                 ),
               ),
             ],
@@ -2461,54 +2634,523 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
             child: const Text('إغلاق'),
           ),
         ],
+        ),
       ),
     );
   }
 
-  Widget _buildCategoryItem(String category, int count) {
-    return ListTile(
-      leading: const Icon(Icons.category),
-      title: Text(category),
-      trailing: Text('$count منتج'),
-    );
-  }
-
-  void _editProduct(String productName) {
+  void _showAddCategoryDialog() {
+    final controller = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تعديل $productName'),
-        content: const Text('سيتم فتح نموذج التعديل هنا'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('إغلاق'),
+        title: const Row(
+          children: [
+            Icon(Icons.add_box, color: Colors.green),
+            SizedBox(width: 8),
+            Text('إضافة فئة جديدة'),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'اسم الفئة *',
+            hintText: 'مثال: قمصان، أحذية، ساعات',
+            border: OutlineInputBorder(),
+            prefixIcon: Icon(Icons.category),
           ),
-        ],
-      ),
-    );
-  }
-
-  void _deleteProduct(String productName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حذف المنتج'),
-        content: Text('هل تريد حذف $productName؟'),
+          autofocus: true,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              final categoryName = controller.text.trim();
+              if (categoryName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('اسم الفئة مطلوب'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('تم حذف $productName')),
-              );
+              try {
+                await _dbService.addCategory(categoryName);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تمت إضافة الفئة "$categoryName" ✓\nقم بإضافة منتجات لهذه الفئة'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('خطأ: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('إضافة'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditCategoryDialog(String oldName) {
+    final controller = TextEditingController(text: oldName);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.edit, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('تعديل الفئة'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('الفئة الحالية: $oldName', style: TextStyle(color: Colors.grey[600])),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'الاسم الجديد *',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.category),
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'تنبيه: سيتم تحديث جميع المنتجات في هذه الفئة',
+              style: TextStyle(fontSize: 12, color: Colors.orange[700]),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty || newName == oldName) {
+                Navigator.pop(context);
+                return;
+              }
+              
+              Navigator.pop(context);
+              try {
+                await _dbService.updateCategory(oldName, newName);
+                await _loadProducts(); // Reload to update cashier page
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم تحديث الفئة من "$oldName" إلى "$newName" ✓'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('خطأ: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('تحديث'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteCategory(String categoryName) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            SizedBox(width: 8),
+            Text('حذف الفئة'),
+          ],
+        ),
+        content: Text(
+          'هل تريد حذف فئة "$categoryName"؟\n\n'
+          'ملاحظة: لا يمكن حذف فئة تحتوي على منتجات.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _dbService.deleteCategory(categoryName);
+                
+              ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم حذف الفئة "$categoryName" ✓'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$e'),
+                    backgroundColor: Colors.orange,
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('حذف'),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _editProduct(int productId) async {
+    // Load product details
+    final product = await _dbService.getProductById(productId);
+    if (product == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المنتج غير موجود'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    // Create controllers with existing values
+    final nameController = TextEditingController(text: product['name'] as String);
+    final categoryController = TextEditingController(text: product['category'] as String);
+    final tagsController = TextEditingController(text: product['tags'] as String? ?? '');
+    final buyPriceController = TextEditingController(text: product['buy_price'].toString());
+    final sellPriceController = TextEditingController(text: product['sell_price'].toString());
+    final sizeController = TextEditingController(text: product['size'] as String);
+    final colorController = TextEditingController(text: product['color'] as String);
+    final materialController = TextEditingController(text: product['material'] as String);
+    final stockController = TextEditingController(text: product['stock_quantity'].toString());
+    final barcodeController = TextEditingController(text: product['barcode'] as String? ?? '');
+    final descriptionController = TextEditingController(text: product['description'] as String? ?? '');
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.edit, color: Colors.blue),
+            const SizedBox(width: 8),
+            Text('تعديل ${product['name']}'),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          height: 600,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'اسم المنتج *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.inventory),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: categoryController,
+                  decoration: const InputDecoration(
+                    labelText: 'الفئة *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.category),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: tagsController,
+                  decoration: const InputDecoration(
+                    labelText: 'العلامات',
+                    hintText: 'صيفي, كاجوال, قطن',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.label),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: buyPriceController,
+                        decoration: const InputDecoration(
+                          labelText: 'سعر الشراء *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.shopping_cart),
+                          suffixText: 'ر.س',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: sellPriceController,
+                        decoration: const InputDecoration(
+                          labelText: 'سعر البيع *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.sell),
+                          suffixText: 'ر.س',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: sizeController,
+                        decoration: const InputDecoration(
+                          labelText: 'المقاس *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.straighten),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: colorController,
+                        decoration: const InputDecoration(
+                          labelText: 'اللون *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.palette),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: materialController,
+                        decoration: const InputDecoration(
+                          labelText: 'المادة *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.texture),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextField(
+                        controller: stockController,
+                        decoration: const InputDecoration(
+                          labelText: 'الكمية *',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.inventory_2),
+                          suffixText: 'قطعة',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: barcodeController,
+                  decoration: const InputDecoration(
+                    labelText: 'الباركود',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.qr_code),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'الوصف',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.description),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Validate
+              if (nameController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('اسم المنتج مطلوب'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              final buyPrice = double.tryParse(buyPriceController.text);
+              final sellPrice = double.tryParse(sellPriceController.text);
+              final stock = int.tryParse(stockController.text) ?? 0;
+              
+              if (buyPrice == null || sellPrice == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('الأسعار يجب أن تكون أرقام صحيحة'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              
+              Navigator.pop(context);
+              
+              try {
+                final updatedProduct = {
+                  'name': nameController.text.trim(),
+                  'category': categoryController.text.trim(),
+                  'tags': tagsController.text.trim(),
+                  'buy_price': buyPrice,
+                  'sell_price': sellPrice,
+                  'size': sizeController.text.trim(),
+                  'color': colorController.text.trim(),
+                  'material': materialController.text.trim(),
+                  'stock_quantity': stock,
+                  'barcode': barcodeController.text.trim(),
+                  'description': descriptionController.text.trim(),
+                  'updated_date': DateTime.now().toIso8601String(),
+                };
+                
+                await _dbService.updateProduct(productId, updatedProduct);
+                await _loadProducts(); // Reload products
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم تحديث "${nameController.text}" بنجاح ✓'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('خطأ في التحديث: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('تحديث'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteProduct(int productId) async {
+    // Get product details first
+    final product = await _dbService.getProductById(productId);
+    if (product == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('المنتج غير موجود'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            SizedBox(width: 8),
+            Text('حذف المنتج'),
+          ],
+        ),
+        content: Text(
+          'هل تريد حذف "${product['name']}"؟\n\n'
+          'هذا الإجراء لا يمكن التراجع عنه.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await _dbService.deleteProduct(productId);
+                await _loadProducts(); // Reload products
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم حذف "${product['name']}" بنجاح ✓'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('خطأ في الحذف: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('حذف'),
           ),
         ],
       ),
