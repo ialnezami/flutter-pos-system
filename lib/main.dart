@@ -276,7 +276,7 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
         }).toList();
         _isLoadingProducts = false;
       });
-    } catch (e) {
+      } catch (e) {
       setState(() => _isLoadingProducts = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1182,27 +1182,262 @@ class _WorkingHomePageState extends State<WorkingHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'التقارير والإحصائيات',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'التقارير والإحصائيات',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _showExportDialog,
+                icon: const Icon(Icons.file_download),
+                label: const Text('تصدير CSV'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
+          
+          // Statistics Cards
           Row(
             children: [
-              Expanded(child: _buildStatCard('إجمالي المنتجات', '100', Icons.inventory, Colors.blue)),
+              Expanded(child: _buildStatCard('إجمالي المنتجات', '${_products.length}', Icons.inventory, Colors.blue)),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('قيمة المخزون', '25,000 ر.س', Icons.warehouse, Colors.green)),
+              Expanded(child: _buildStatCard('المبيعات اليوم', _getSalesToday(), Icons.trending_up, Colors.green)),
               const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('الربح المتوقع', '8,750 ر.س', Icons.trending_up, Colors.orange)),
+              Expanded(child: _buildStatCard('إجمالي العمليات', _getTotalTransactions(), Icons.receipt, Colors.orange)),
             ],
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _showExportDialog,
-            icon: const Icon(Icons.file_download),
-            label: const Text('تصدير البيانات'),
+          
+          // Sales History Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'سجل المبيعات',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _loadSalesHistory,
+                icon: const Icon(Icons.refresh),
+                label: const Text('تحديث'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Sales History List
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _dbService.getAllSales(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text('خطأ في تحميل السجل: ${snapshot.error}'),
+                  );
+                }
+                
+                final sales = snapshot.data ?? [];
+                
+                if (sales.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text(
+                          'لا توجد عمليات بيع بعد',
+                          style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                
+                return ListView.builder(
+                  itemCount: sales.length,
+                  itemBuilder: (context, index) {
+                    final sale = sales[index];
+                    final saleDate = DateTime.parse(sale['sale_date'] as String);
+                    final totalAmount = (sale['total_amount'] as num).toDouble();
+                    final profitAmount = (sale['profit_amount'] as num).toDouble();
+                    final paymentMethod = sale['payment_method'] as String;
+                    
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.green[100],
+                          child: Icon(
+                            paymentMethod == 'cash' ? Icons.money : Icons.credit_card,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                        title: Row(
+                          children: [
+                            Text(
+                              'فاتورة #${sale['id']}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: paymentMethod == 'cash' ? Colors.blue[50] : Colors.purple[50],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                paymentMethod == 'cash' ? 'نقدي' : 'بطاقة',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: paymentMethod == 'cash' ? Colors.blue[700] : Colors.purple[700],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${saleDate.day}/${saleDate.month}/${saleDate.year} - ${saleDate.hour}:${saleDate.minute.toString().padLeft(2, '0')}',
+                            ),
+                            Text(
+                              'الكاشير: ${sale['cashier_name']}',
+                              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                            ),
+                          ],
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '${totalAmount.toStringAsFixed(2)} ر.س',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            Text(
+                              'ربح: ${profitAmount.toStringAsFixed(2)} ر.س',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () => _showSaleDetails(sale),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _getSalesToday() {
+    // This will be calculated from database in a real implementation
+    return '0.00 ر.س';
+  }
+  
+  String _getTotalTransactions() {
+    // This will be calculated from database in a real implementation
+    return '0';
+  }
+  
+  void _loadSalesHistory() {
+    setState(() {});
+  }
+  
+  void _showSaleDetails(Map<String, dynamic> sale) async {
+    // Load sale items
+    final saleItems = await _dbService.getSaleItems(sale['id'] as int);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('تفاصيل فاتورة #${sale['id']}'),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Sale Info
+              _buildDetailRow('التاريخ', DateTime.parse(sale['sale_date'] as String).toString().substring(0, 16)),
+              _buildDetailRow('الكاشير', sale['cashier_name'] as String),
+              _buildDetailRow('طريقة الدفع', sale['payment_method'] == 'cash' ? 'نقدي' : 'بطاقة'),
+              const Divider(),
+              
+              // Items
+              const Text('المنتجات:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              ...saleItems.map((item) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('${item['quantity']}x منتج #${item['product_id']}'),
+                    Text('${(item['total_price'] as num).toStringAsFixed(2)} ر.س'),
+                  ],
+                ),
+              )),
+              const Divider(),
+              
+              // Totals
+              _buildDetailRow('المجموع', '${(sale['total_amount'] as num).toStringAsFixed(2)} ر.س', isBold: true),
+              _buildDetailRow('المدفوع', '${(sale['paid_amount'] as num).toStringAsFixed(2)} ر.س'),
+              _buildDetailRow('الباقي', '${(sale['change_amount'] as num).toStringAsFixed(2)} ر.س'),
+              _buildDetailRow('الربح', '${(sale['profit_amount'] as num).toStringAsFixed(2)} ر.س', color: Colors.green),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إغلاق'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildDetailRow(String label, String value, {bool isBold = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: isBold ? FontWeight.bold : null)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : null,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -1997,22 +2232,64 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
             label: const Text('طباعة'),
           ),
           ElevatedButton.icon(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              setState(() {
-                _cartItems.clear();
-                _cartDiscount = 0.0;
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    'تم إتمام البيع بنجاح! 🎉\n'
-                    '${paymentMethod == 'cash' ? 'الباقي: ${changeAmount.toStringAsFixed(2)} ر.س' : 'تم الدفع بالبطاقة'}',
+              
+              // Save sale to database
+              try {
+                // Calculate totals
+                final totalCost = _cartItems.fold(0.0, (sum, item) => 
+                  sum + (item.product.price * 0.6 * item.quantity)); // Assuming 40% markup
+                final profitAmount = _finalTotal - totalCost;
+                
+                // Prepare sale data
+                final saleData = {
+                  'total_amount': _finalTotal,
+                  'total_cost': totalCost,
+                  'profit_amount': profitAmount,
+                  'paid_amount': paidAmount,
+                  'change_amount': changeAmount,
+                  'payment_method': paymentMethod,
+                  'cashier_name': AuthService.currentUser ?? 'admin',
+                };
+                
+                // Prepare sale items (Note: we need product IDs from database)
+                final saleItems = _cartItems.map((item) => {
+                  'product_id': 1, // This should be the actual product ID from database
+                  'quantity': item.quantity,
+                  'buy_price': item.product.price * 0.6, // Assuming 40% markup
+                  'sell_price': item.product.price,
+                  'total_cost': item.product.price * 0.6 * item.quantity,
+                  'total_price': item.subtotal - item.discount,
+                }).toList();
+                
+                // Save to database
+                await _dbService.insertSale(saleData, saleItems);
+                
+                // Clear cart
+                setState(() {
+                  _cartItems.clear();
+                  _cartDiscount = 0.0;
+                });
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'تم إتمام البيع وحفظه في قاعدة البيانات! 🎉\n'
+                      '${paymentMethod == 'cash' ? 'الباقي: ${changeAmount.toStringAsFixed(2)} ر.س' : 'تم الدفع بالبطاقة'}',
+                    ),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 4),
                   ),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 4),
-                ),
-              );
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم إتمام البيع ولكن حدث خطأ في الحفظ: $e'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
             },
             icon: const Icon(Icons.check),
             label: const Text('تم'),
@@ -2153,12 +2430,63 @@ ${item.quantity} × ${item.product.price.toStringAsFixed(2)} = ${item.subtotal.t
     );
   }
 
-  void _exportData(String type) {
+  void _exportData(String type) async {
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('تم تصدير $type بنجاح'),
-        backgroundColor: Colors.green,
+    
+    try {
+      String csvContent = '';
+      String fileName = '';
+      
+      switch (type) {
+        case 'products':
+          csvContent = await _dbService.exportTableToCSV('products');
+          fileName = 'products_${DateTime.now().millisecondsSinceEpoch}.csv';
+          break;
+        case 'sales':
+          csvContent = await _dbService.exportTableToCSV('sales');
+          fileName = 'sales_${DateTime.now().millisecondsSinceEpoch}.csv';
+          break;
+        case 'all':
+          csvContent = await _dbService.exportAllData();
+          fileName = 'pos_backup_${DateTime.now().millisecondsSinceEpoch}.csv';
+          break;
+      }
+      
+      final file = await _dbService.saveExportToFile(csvContent, fileName);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('تم تصدير البيانات بنجاح\nالملف: ${file.path}'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'عرض الموقع',
+            onPressed: () => _showFileLocation(file.path),
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطأ في التصدير: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+  
+  void _showFileLocation(String path) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('موقع الملف'),
+        content: SelectableText(path),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('موافق'),
+          ),
+        ],
       ),
     );
   }

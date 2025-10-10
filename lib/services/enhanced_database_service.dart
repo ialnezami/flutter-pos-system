@@ -434,6 +434,61 @@ class EnhancedDatabaseService {
     
     return sales.first;
   }
+  
+  // Get all sales with optional date filter
+  Future<List<Map<String, dynamic>>> getAllSales({String? dateFilter}) async {
+    final db = await database;
+    String query = 'SELECT * FROM sales ORDER BY sale_date DESC';
+    
+    if (dateFilter != null) {
+      query = '''
+        SELECT * FROM sales 
+        WHERE sale_date LIKE '$dateFilter%' 
+        ORDER BY sale_date DESC
+      ''';
+    }
+    
+    return await db.rawQuery(query);
+  }
+  
+  // Get sale items for a specific sale
+  Future<List<Map<String, dynamic>>> getSaleItems(int saleId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT 
+        si.*,
+        p.name as product_name,
+        p.category as product_category,
+        p.size as product_size,
+        p.color as product_color
+      FROM sale_items si
+      LEFT JOIN products p ON si.product_id = p.id
+      WHERE si.sale_id = ?
+    ''', [saleId]);
+  }
+  
+  // Get sales statistics for a date range
+  Future<Map<String, dynamic>> getSalesStats({String? startDate, String? endDate}) async {
+    final db = await database;
+    String whereClause = '';
+    
+    if (startDate != null && endDate != null) {
+      whereClause = "WHERE sale_date BETWEEN '$startDate' AND '$endDate'";
+    }
+    
+    final result = await db.rawQuery('''
+      SELECT 
+        COUNT(id) as total_sales,
+        SUM(total_amount) as total_revenue,
+        SUM(profit_amount) as total_profit,
+        AVG(total_amount) as average_sale,
+        MAX(total_amount) as largest_sale
+      FROM sales
+      $whereClause
+    ''');
+    
+    return result.first;
+  }
 
   Future<List<String>> getAllCategories() async {
     final db = await database;
